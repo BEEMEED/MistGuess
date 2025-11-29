@@ -1,7 +1,7 @@
 # MistGuess
 
-GeoGuessr clone with real-time multiplayer gameplay, matchmaking system
-frontend built with LLM for demo
+GeoGuessr clone with real-time multiplayer gameplay, matchmaking system.
+ frontend built with LLM for demo
 
 ```bash
 npm install
