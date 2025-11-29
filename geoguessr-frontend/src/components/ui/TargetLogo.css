@@ -1,0 +1,69 @@
+.target-logo {
+  display: inline-block;
+  position: relative;
+}
+
+.target-logo svg {
+  display: block;
+  filter: drop-shadow(0 0 20px rgba(100, 100, 100, 0.5));
+}
+
+/* Outer ring rotates counterclockwise */
+.outer-ring {
+  transform-origin: center;
+  animation: rotateCounterClockwise 20s linear infinite;
+}
+
+/* Inner ring with crosshair rotates clockwise */
+.inner-ring {
+  transform-origin: center;
+  animation: rotateClockwise 15s linear infinite;
+}
+
+/* Center dot pulses */
+.center-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+@keyframes rotateClockwise {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rotateCounterClockwise {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 0.9;
+    r: 12;
+  }
+  50% {
+    opacity: 1;
+    r: 14;
+  }
+}
+
+/* Hover effect */
+.target-logo:hover svg {
+  filter: drop-shadow(0 0 30px rgba(74, 158, 255, 0.6));
+}
+
+.target-logo:hover .outer-ring {
+  animation-duration: 10s;
+}
+
+.target-logo:hover .inner-ring {
+  animation-duration: 8s;
+}

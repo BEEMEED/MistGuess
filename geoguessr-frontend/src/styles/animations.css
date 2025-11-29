@@ -1,0 +1,294 @@
+/* Mistborn Animations - Ash and atmospheric effects */
+
+/* Falling ash particles */
+.ash-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.ash-particle {
+  position: absolute;
+  background: var(--ash-color);
+  border-radius: 50%;
+  opacity: 0;
+  animation: ashFall linear infinite;
+}
+
+/* Generate multiple ash particles with different sizes and speeds */
+.ash-particle:nth-child(1) { left: 10%; width: 3px; height: 3px; animation-duration: 15s; animation-delay: 0s; }
+.ash-particle:nth-child(2) { left: 20%; width: 2px; height: 2px; animation-duration: 12s; animation-delay: 2s; }
+.ash-particle:nth-child(3) { left: 30%; width: 4px; height: 4px; animation-duration: 18s; animation-delay: 4s; }
+.ash-particle:nth-child(4) { left: 40%; width: 2px; height: 2px; animation-duration: 14s; animation-delay: 1s; }
+.ash-particle:nth-child(5) { left: 50%; width: 3px; height: 3px; animation-duration: 16s; animation-delay: 3s; }
+.ash-particle:nth-child(6) { left: 60%; width: 2px; height: 2px; animation-duration: 13s; animation-delay: 5s; }
+.ash-particle:nth-child(7) { left: 70%; width: 4px; height: 4px; animation-duration: 17s; animation-delay: 2s; }
+.ash-particle:nth-child(8) { left: 80%; width: 3px; height: 3px; animation-duration: 15s; animation-delay: 4s; }
+.ash-particle:nth-child(9) { left: 90%; width: 2px; height: 2px; animation-duration: 14s; animation-delay: 1s; }
+.ash-particle:nth-child(10) { left: 15%; width: 3px; height: 3px; animation-duration: 16s; animation-delay: 3s; }
+.ash-particle:nth-child(11) { left: 25%; width: 2px; height: 2px; animation-duration: 13s; animation-delay: 0s; }
+.ash-particle:nth-child(12) { left: 35%; width: 4px; height: 4px; animation-duration: 19s; animation-delay: 5s; }
+.ash-particle:nth-child(13) { left: 45%; width: 3px; height: 3px; animation-duration: 15s; animation-delay: 2s; }
+.ash-particle:nth-child(14) { left: 55%; width: 2px; height: 2px; animation-duration: 12s; animation-delay: 4s; }
+.ash-particle:nth-child(15) { left: 65%; width: 3px; height: 3px; animation-duration: 17s; animation-delay: 1s; }
+.ash-particle:nth-child(16) { left: 75%; width: 2px; height: 2px; animation-duration: 14s; animation-delay: 3s; }
+.ash-particle:nth-child(17) { left: 85%; width: 4px; height: 4px; animation-duration: 16s; animation-delay: 0s; }
+.ash-particle:nth-child(18) { left: 95%; width: 3px; height: 3px; animation-duration: 18s; animation-delay: 5s; }
+.ash-particle:nth-child(19) { left: 5%; width: 2px; height: 2px; animation-duration: 13s; animation-delay: 2s; }
+.ash-particle:nth-child(20) { left: 48%; width: 3px; height: 3px; animation-duration: 15s; animation-delay: 4s; }
+
+@keyframes ashFall {
+  0% {
+    top: -10%;
+    opacity: 0;
+    transform: translateX(0) rotate(0deg);
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.4;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+    transform: translateX(50px) rotate(360deg);
+  }
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.16s ease-out;
+}
+
+/* Slide up animation */
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.18s ease-out;
+}
+
+/* Metallic pulse for buttons */
+@keyframes metallicPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 10px rgba(205, 127, 50, 0.3),
+      inset 0 0 10px rgba(205, 127, 50, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 25px rgba(205, 127, 50, 0.6),
+      inset 0 0 15px rgba(205, 127, 50, 0.3);
+  }
+}
+
+.metallic-pulse {
+  animation: metallicPulse 2s ease-in-out infinite;
+}
+
+/* Smooth scale effect (без bounce) */
+@keyframes scaleSmooth {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.scale-smooth {
+  animation: scaleSmooth 0.15s ease-out;
+}
+
+/* Shake animation for errors */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.shake {
+  animation: shake 0.3s ease-out;
+}
+
+/* Red glow for error states */
+@keyframes redGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--accent-red-glow);
+  }
+  50% {
+    box-shadow: 0 0 25px var(--accent-red-glow);
+  }
+}
+
+.error-glow {
+  animation: redGlow 1.5s ease-in-out infinite;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Typing indicator animation */
+@keyframes typing {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 2px;
+  background: var(--metal-bronze);
+  border-radius: 50%;
+  animation: typing 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Victory glow animation (без scale bounce) */
+@keyframes victoryGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 15px var(--text-gold),
+      0 0 30px var(--text-gold);
+  }
+  50% {
+    box-shadow:
+      0 0 25px var(--text-gold),
+      0 0 50px var(--text-gold);
+  }
+}
+
+.victory-glow {
+  animation: victoryGlow 2s ease-in-out infinite;
+}
+
+/* Countdown animation (без bounce) */
+@keyframes countdown {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.countdown {
+  animation: countdown 0.2s ease-out;
+}
+
+/* Progress bar fill animation */
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+}
+
+.progress-fill {
+  animation: progressFill 1s ease-out;
+}
+
+/* Reveal animation from left */
+@keyframes revealLeft {
+  from {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.reveal-left {
+  animation: revealLeft 0.18s ease-out;
+}
+
+/* Reveal animation from right */
+@keyframes revealRight {
+  from {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.reveal-right {
+  animation: revealRight 0.18s ease-out;
+}
+
+/* Rotate animation for loading */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rotate {
+  animation: rotate 2s linear infinite;
+}

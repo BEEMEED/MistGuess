@@ -1,0 +1,98 @@
+.mistborn-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.mistborn-input-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
+
+.mistborn-input {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background: rgba(13, 13, 13, 0.8);
+  color: var(--text-primary);
+  border: 2px solid rgba(112, 112, 112, 0.3);
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.mistborn-input::placeholder {
+  color: var(--text-muted);
+}
+
+.mistborn-input:focus {
+  border-color: rgba(205, 127, 50, 0.6);
+  box-shadow:
+    0 0 0 4px rgba(205, 127, 50, 0.15),
+    0 0 20px rgba(205, 127, 50, 0.3),
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 -1px 0 rgba(205, 127, 50, 0.2);
+  background: rgba(20, 20, 20, 0.9);
+}
+
+.mistborn-input:hover:not(:focus) {
+  border-color: rgba(150, 150, 150, 0.4);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Error state */
+.mistborn-input-error {
+  border-color: rgba(139, 0, 0, 0.7) !important;
+  box-shadow:
+    0 0 0 4px rgba(139, 0, 0, 0.2),
+    0 0 20px rgba(139, 0, 0, 0.4),
+    inset 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+  animation: errorPulse 0.5s ease-out;
+}
+
+@keyframes errorPulse {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.mistborn-input-error:focus {
+  box-shadow:
+    0 0 0 4px rgba(139, 0, 0, 0.3),
+    0 0 25px rgba(139, 0, 0, 0.5),
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 -1px 0 rgba(139, 0, 0, 0.3) !important;
+}
+
+.mistborn-input-error-text {
+  font-size: 0.85rem;
+  color: var(--accent-red);
+  margin-top: -0.25rem;
+}
+
+/* Disabled state */
+.mistborn-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-primary);
+  color: var(--text-muted);
+}

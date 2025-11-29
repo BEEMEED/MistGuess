@@ -1,0 +1,316 @@
+.matchmaking-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  overflow: hidden;
+}
+
+.matchmaking-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 600px;
+  padding: 2rem;
+}
+
+/* Searching State */
+.searching-card {
+  padding: 3rem 2rem;
+  text-align: center;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.searching-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.searching-spinner {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 1rem;
+}
+
+.spinner-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 4px solid transparent;
+  border-top-color: #888;
+  border-radius: 50%;
+  animation: spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.spinner-ring.delay-1 {
+  border-top-color: #666;
+  animation-delay: -0.5s;
+}
+
+.spinner-ring.delay-2 {
+  border-top-color: #999;
+  animation-delay: -1s;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.searching-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #999;
+  text-shadow: 0 0 20px rgba(100, 100, 100, 0.5);
+  margin: 0;
+}
+
+.queue-info {
+  font-size: 1.125rem;
+  color: #777;
+  margin: 0;
+}
+
+.queue-info .highlight {
+  color: #999;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.searching-subtitle {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.cancel-btn {
+  margin-top: 1rem;
+  min-width: 200px;
+}
+
+/* Match Found State */
+.match-found-card {
+  padding: 3rem 2rem;
+  text-align: center;
+  animation: matchFoundAnimation 0.6s ease-out;
+  background: rgba(40, 40, 40, 0.3);
+}
+
+@keyframes matchFoundAnimation {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(80, 80, 80, 0.3), 0 0 40px rgba(100, 100, 100, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(100, 100, 100, 0.5), 0 0 60px rgba(120, 120, 120, 0.3);
+  }
+}
+
+.match-found-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.match-found-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #999;
+  text-shadow: 0 0 30px rgba(100, 100, 100, 0.6);
+  margin: 0;
+  animation: titlePulse 1s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.opponent-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: rgba(15, 15, 30, 0.5);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.opponent-avatar-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid #666;
+  box-shadow: 0 0 30px rgba(80, 80, 80, 0.5);
+  background: rgba(40, 40, 40, 0.5);
+}
+
+.opponent-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.opponent-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.opponent-xp {
+  font-size: 1.125rem;
+  color: #cbd5e0;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Countdown */
+.countdown-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 400px;
+  margin-top: 1rem;
+}
+
+.countdown-text {
+  font-size: 1.25rem;
+  color: #cbd5e0;
+  margin: 0;
+}
+
+.countdown-number {
+  font-size: 4rem;
+  font-weight: 900;
+  color: #999;
+  text-shadow: 0 0 40px rgba(100, 100, 100, 0.6);
+  animation: countdownPulse 1s ease-in-out infinite;
+}
+
+@keyframes countdownPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+.countdown-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(80, 80, 80, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.countdown-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #666 0%, #888 100%);
+  box-shadow: 0 0 10px rgba(100, 100, 100, 0.6);
+}
+
+/* Error State */
+.error-card {
+  padding: 3rem 2rem;
+  text-align: center;
+  border: 2px solid #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.error-title {
+  font-size: 2rem;
+  color: #ef4444;
+  margin: 0;
+}
+
+.error-message {
+  font-size: 1.125rem;
+  color: #cbd5e0;
+  margin: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .matchmaking-container {
+    padding: 1rem;
+  }
+
+  .searching-title,
+  .match-found-title {
+    font-size: 1.75rem;
+  }
+
+  .countdown-number {
+    font-size: 3rem;
+  }
+
+  .opponent-avatar-container {
+    width: 100px;
+    height: 100px;
+  }
+}

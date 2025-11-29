@@ -1,0 +1,345 @@
+.home-page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+/* Street View Full Screen */
+.home-page__street-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Quick Match Button */
+.home-page__quick-match-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(10, 10, 10, 0.8);
+  border: 2px solid rgba(74, 158, 255, 0.6);
+  color: rgba(74, 158, 255, 0.9);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
+  backdrop-filter: blur(5px);
+}
+
+.home-page__quick-match-btn:hover {
+  background: rgba(74, 158, 255, 0.2);
+  border-color: rgba(74, 158, 255, 0.9);
+  box-shadow: 0 0 30px rgba(74, 158, 255, 0.5);
+  transform: scale(1.1);
+  animation: quickMatchPulse 1s infinite;
+}
+
+@keyframes quickMatchPulse {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(74, 158, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(74, 158, 255, 0.8);
+  }
+}
+
+/* Guide Button */
+.home-page__guide-btn {
+  position: fixed;
+  top: 20px;
+  left: 80px;
+  z-index: 100;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(10, 10, 10, 0.8);
+  border: 2px solid rgba(139, 92, 246, 0.6);
+  color: rgba(139, 92, 246, 0.9);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  backdrop-filter: blur(5px);
+}
+
+.home-page__guide-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.9);
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+  transform: scale(1.1);
+  animation: guidePulse 1s infinite;
+}
+
+@keyframes guidePulse {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.8);
+  }
+}
+
+/* Settings Button */
+.home-page__settings-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(10, 10, 10, 0.8);
+  border: 2px solid rgba(205, 127, 50, 0.6);
+  color: var(--text-gold);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(205, 127, 50, 0.3);
+}
+
+.home-page__settings-btn:hover {
+  background: rgba(205, 127, 50, 0.2);
+  border-color: rgba(205, 127, 50, 0.9);
+  box-shadow: 0 0 30px rgba(205, 127, 50, 0.5);
+  transform: rotate(45deg);
+}
+
+/* Mini Map - simple without decorative frame */
+.home-page__mini-map {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 300px;
+  height: 200px;
+  z-index: 50;
+  border: 2px solid #ffffff;
+  background: #1a1a1a;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.home-page__mini-map.expanded {
+  width: 500px;
+  height: 400px;
+  bottom: 80px;
+  right: 20px;
+}
+
+.home-page__mini-map > div {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+
+/* Guess Button Container */
+.home-page__guess-btn-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  left: 20px;
+  max-width: 400px;
+  margin-left: auto;
+  z-index: 50;
+}
+
+/* Loading and Error States */
+.home-page__loading,
+.home-page__error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  text-align: center;
+  color: var(--text-gold);
+  font-size: 1.5rem;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  background: rgba(10, 10, 10, 0.9);
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  border: 2px solid rgba(205, 127, 50, 0.6);
+  box-shadow: 0 0 40px rgba(205, 127, 50, 0.3);
+}
+
+.home-page__error p {
+  margin-bottom: 1.5rem;
+  color: rgba(234, 67, 53, 0.9);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .home-page__settings-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 1.25rem;
+    top: 15px;
+    right: 15px;
+  }
+
+  .home-page__mini-map {
+    bottom: 70px;
+    right: 10px;
+    width: 250px;
+    height: 170px;
+    border: 2px solid #ffffff;
+  }
+
+  .home-page__guess-btn-container {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+  }
+
+  .home-page__loading,
+  .home-page__error {
+    font-size: 1.2rem;
+    padding: 1.5rem 2rem;
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-page__mini-map {
+    bottom: 70px;
+    right: 10px;
+    width: 200px;
+    height: 140px;
+    border: 2px solid #ffffff;
+  }
+}
+
+/* Timer overlay - top center */
+.timer-overlay {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(16px);
+  padding: 0.75rem 1.5rem;
+  border: 2px solid rgba(205, 127, 50, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 30px rgba(205, 127, 50, 0.2);
+  transition: all 0.3s ease;
+}
+
+.timer-icon {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.6));
+}
+
+.timer-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #d4a574;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  text-shadow: 0 2px 8px rgba(205, 127, 50, 0.8);
+  letter-spacing: 2px;
+}
+
+/* Warning animation when time is low */
+.timer-overlay.timer-warning {
+  border-color: rgba(200, 50, 50, 0.6);
+  background: rgba(20, 5, 5, 0.9);
+  animation: timerPulse 1s ease-in-out infinite, mistbornEclipse 2s ease-in-out infinite;
+}
+
+.timer-overlay.timer-warning .timer-value {
+  color: #ff6b6b;
+  text-shadow: 0 0 15px rgba(255, 107, 107, 0.9), 0 0 30px rgba(200, 50, 50, 0.6);
+}
+
+.timer-overlay.timer-warning .timer-icon {
+  filter: drop-shadow(0 0 12px rgba(255, 107, 107, 0.8));
+  animation: shake 0.5s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 30px rgba(200, 50, 50, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.9), 0 0 50px rgba(200, 50, 50, 0.6);
+  }
+}
+
+@keyframes mistbornEclipse {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(0.7) contrast(1.2);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+/* Time warning full-screen overlay */
+.time-warning-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 90;
+  background:
+    radial-gradient(
+      circle at center,
+      transparent 0%,
+      rgba(10, 0, 0, 0.2) 30%,
+      rgba(20, 5, 5, 0.5) 60%,
+      rgba(10, 0, 0, 0.8) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.3) 0%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.3) 100%
+    );
+  animation: ominousPulse 2s ease-in-out infinite, fogIntensify 1.5s ease-in-out infinite;
+  transition: opacity 0.5s ease;
+}
+
+@keyframes ominousPulse {
+  0%, 100% {
+    filter: brightness(1) contrast(1);
+  }
+  50% {
+    filter: brightness(0.7) contrast(1.3);
+  }
+}
+
+@keyframes fogIntensify {
+  0%, 100% {
+    backdrop-filter: blur(0px);
+  }
+  50% {
+    backdrop-filter: blur(2px);
+  }
+}

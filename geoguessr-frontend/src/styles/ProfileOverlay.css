@@ -1,0 +1,217 @@
+.profile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-overlay__backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.profile-overlay__content {
+  position: relative;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(13, 13, 23, 0.95));
+  border: 2px solid rgba(205, 127, 50, 0.3);
+  border-radius: 16px;
+  padding: 32px;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-overlay__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 24px 0;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(205, 127, 50, 0.5);
+}
+
+.profile-overlay__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.profile-overlay__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.profile-overlay__error {
+  color: #ff6b6b;
+  font-size: 14px;
+  margin: 0;
+  padding: 8px 12px;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.profile-overlay__hint {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  margin: 0;
+  text-align: center;
+}
+
+.profile-overlay__filename {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+  padding: 8px;
+  background: rgba(205, 127, 50, 0.1);
+  border-radius: 8px;
+  word-break: break-all;
+}
+
+/* Avatar preview */
+.avatar-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px 0;
+}
+
+.avatar-preview__image {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  border: 3px solid rgba(205, 127, 50, 0.5);
+}
+
+/* Telegram Link Overlay */
+.telegram-link-overlay {
+  min-width: 500px;
+  max-width: 600px;
+}
+
+.telegram-link-overlay__instruction {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+.telegram-link-overlay__steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.telegram-link-overlay__steps li {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  padding: 12px;
+  background: rgba(205, 127, 50, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(205, 127, 50, 0.2);
+}
+
+.telegram-link-overlay__code-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(205, 127, 50, 0.3);
+}
+
+.telegram-link-overlay__code {
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: #d4a574;
+  letter-spacing: 2px;
+  user-select: all;
+}
+
+.telegram-link-overlay__command {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #d4a574;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin: 0 4px;
+}
+
+.telegram-link-overlay__copy-btn {
+  padding: 8px 16px;
+  background: rgba(205, 127, 50, 0.2);
+  border: 1px solid rgba(205, 127, 50, 0.4);
+  border-radius: 6px;
+  color: #d4a574;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.telegram-link-overlay__copy-btn:hover {
+  background: rgba(205, 127, 50, 0.3);
+  border-color: rgba(205, 127, 50, 0.6);
+}
+
+.telegram-link-overlay__copy-btn:active {
+  transform: scale(0.95);
+}
+
+.telegram-link-overlay__bot-link {
+  color: #d4a574;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.telegram-link-overlay__bot-link:hover {
+  color: #cd7f32;
+  text-decoration: underline;
+}
+
+/* Profile Page Telegram Section */
+.telegram-linked {
+  color: #4ade80 !important;
+  font-weight: 600;
+}
+
+.telegram-not-linked {
+  color: rgba(255, 255, 255, 0.5) !important;
+}

@@ -1,0 +1,59 @@
+.toast {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9999;
+  transition: all 0.16s ease-out;
+}
+
+.toast-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast-hidden {
+  opacity: 0;
+  transform: translateX(80px);
+}
+
+.toast-content {
+  background: #131313;
+  border: 1px solid #252525;
+  border-radius: 5px;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.45);
+  min-width: 220px;
+}
+
+.toast-icon {
+  font-size: 1.25rem;
+  color: #9a9a9a;
+}
+
+.toast-message {
+  color: #9a9a9a;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+/* Варианты статусов */
+.toast-content.success .toast-message {
+  color: #6a8a6a;
+}
+
+.toast-content.error .toast-message {
+  color: #8a6a6a;
+}
+
+.toast-content.loading .toast-icon {
+  color: #5a4a6a;
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

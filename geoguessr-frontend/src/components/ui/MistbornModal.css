@@ -1,0 +1,103 @@
+.mistborn-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.mistborn-modal {
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(205, 127, 50, 0.4);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(205, 127, 50, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.mistborn-modal__header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(205, 127, 50, 0.3);
+}
+
+.mistborn-modal__title {
+  margin: 0;
+  color: var(--text-gold);
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 0 0 20px rgba(205, 127, 50, 0.5);
+  font-family: 'Georgia', 'Times New Roman', serif;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.mistborn-modal__content {
+  margin-bottom: 2rem;
+}
+
+.mistborn-modal__message {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.mistborn-modal__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .mistborn-modal {
+    padding: 1.5rem;
+    max-width: 95%;
+  }
+
+  .mistborn-modal__title {
+    font-size: 1.3rem;
+  }
+
+  .mistborn-modal__message {
+    font-size: 1rem;
+  }
+
+  .mistborn-modal__actions {
+    flex-direction: column;
+  }
+}

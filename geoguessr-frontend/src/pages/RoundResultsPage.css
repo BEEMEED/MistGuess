@@ -1,0 +1,286 @@
+.results-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 2rem;
+}
+
+.results-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.results-header {
+  text-align: center;
+}
+
+.results-title {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  color: var(--metal-bronze);
+  text-shadow: 0 0 20px rgba(205, 127, 50, 0.6);
+}
+
+.results-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.results-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Winner Card */
+.winner-card {
+  animation-delay: 0.2s;
+}
+
+.winner-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--text-gold);
+  font-size: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.winner-info {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.winner-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--text-gold), #b8860b);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  font-size: 2.5rem;
+  color: var(--text-primary);
+  box-shadow:
+    0 0 30px rgba(212, 175, 55, 0.8),
+    0 4px 20px rgba(0, 0, 0, 0.5);
+  border: 3px solid var(--text-gold);
+}
+
+.winner-details {
+  text-align: left;
+}
+
+.winner-name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-gold);
+  margin-bottom: 0.5rem;
+}
+
+.winner-distance {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Scoreboard Card */
+.scoreboard-card {
+  animation-delay: 0.4s;
+}
+
+.scoreboard-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--metal-bronze);
+}
+
+.scoreboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scoreboard-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--metal-iron);
+  border-radius: 4px;
+  transition: all var(--transition-fast);
+}
+
+.scoreboard-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateX(5px);
+}
+
+.scoreboard-item.first-place {
+  border-color: var(--text-gold);
+  background: linear-gradient(
+    90deg,
+    rgba(212, 175, 55, 0.1),
+    var(--bg-primary)
+  );
+}
+
+.scoreboard-item.current-user {
+  border-color: var(--metal-bronze);
+  background: linear-gradient(
+    90deg,
+    rgba(205, 127, 50, 0.1),
+    var(--bg-primary)
+  );
+}
+
+.scoreboard-rank {
+  width: 40px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--metal-bronze);
+}
+
+.scoreboard-player {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.scoreboard-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--metal-bronze), var(--metal-copper));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.4);
+}
+
+.scoreboard-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.scoreboard-distance {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-gold);
+  font-family: monospace;
+}
+
+/* Location Card */
+.location-card {
+  animation-delay: 0.6s;
+}
+
+.location-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--metal-bronze);
+}
+
+.location-coords {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.coord-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--metal-iron);
+  border-radius: 4px;
+}
+
+.coord-label {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.coord-value {
+  color: var(--text-gold);
+  font-family: monospace;
+  font-weight: 700;
+}
+
+/* Results Actions */
+.results-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.waiting-host {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .results-title {
+    font-size: 2rem;
+  }
+
+  .winner-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+  }
+
+  .winner-name {
+    font-size: 1.5rem;
+  }
+
+  .winner-distance {
+    font-size: 1rem;
+  }
+
+  .winner-info {
+    gap: 1rem;
+  }
+
+  .scoreboard-item {
+    padding: 0.75rem;
+  }
+
+  .scoreboard-rank {
+    width: 30px;
+    font-size: 1rem;
+  }
+
+  .scoreboard-icon {
+    width: 35px;
+    height: 35px;
+  }
+}

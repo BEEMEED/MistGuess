@@ -1,0 +1,218 @@
+.mistborn-button {
+  position: relative;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: visible;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Georgia', 'Times New Roman', serif;
+  background-clip: padding-box;
+}
+
+.mistborn-button-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Primary variant - Bronze metallic */
+.mistborn-button-primary {
+  background: linear-gradient(135deg, #1a1410 0%, #2d1f15 50%, #1a1410 100%);
+  color: #d4a574;
+  box-shadow:
+    0 0 20px rgba(205, 127, 50, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.mistborn-button-primary::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 6px;
+  padding: 2px;
+  background: linear-gradient(90deg,
+    var(--metal-bronze) 0%,
+    var(--metal-copper) 25%,
+    #ffd700 50%,
+    var(--metal-copper) 75%,
+    var(--metal-bronze) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: borderRotate 3s linear infinite;
+  z-index: -1;
+}
+
+@keyframes borderRotate {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.mistborn-button-primary:hover:not(.mistborn-button-disabled) {
+  background: linear-gradient(135deg, #2d1f15 0%, #3d2a1a 50%, #2d1f15 100%);
+  color: #f0c080;
+  box-shadow:
+    0 0 30px rgba(205, 127, 50, 0.5),
+    0 0 60px rgba(205, 127, 50, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.mistborn-button-primary:active:not(.mistborn-button-disabled) {
+  transform: translateY(0) scale(1);
+  box-shadow:
+    0 0 15px rgba(205, 127, 50, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+}
+
+/* Secondary variant - Steel metallic */
+.mistborn-button-secondary {
+  background: linear-gradient(135deg, #141414 0%, #1f1f1f 50%, #141414 100%);
+  color: #b0b0b0;
+  box-shadow:
+    0 0 20px rgba(128, 128, 128, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.mistborn-button-secondary::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 6px;
+  padding: 2px;
+  background: linear-gradient(90deg,
+    var(--metal-iron) 0%,
+    var(--metal-steel) 25%,
+    #c0c0c0 50%,
+    var(--metal-steel) 75%,
+    var(--metal-iron) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: borderRotate 3s linear infinite;
+  z-index: -1;
+}
+
+.mistborn-button-secondary:hover:not(.mistborn-button-disabled) {
+  background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 50%, #1f1f1f 100%);
+  color: #d0d0d0;
+  box-shadow:
+    0 0 30px rgba(128, 128, 128, 0.4),
+    0 0 60px rgba(128, 128, 128, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.mistborn-button-secondary:active:not(.mistborn-button-disabled) {
+  transform: translateY(0) scale(1);
+  box-shadow:
+    0 0 15px rgba(128, 128, 128, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+}
+
+/* Danger variant - Dark red */
+.mistborn-button-danger {
+  background: linear-gradient(135deg, #1a0a0a 0%, #2d0f0f 50%, #1a0a0a 100%);
+  color: #d47474;
+  box-shadow:
+    0 0 20px rgba(139, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.mistborn-button-danger::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 6px;
+  padding: 2px;
+  background: linear-gradient(90deg,
+    var(--accent-red) 0%,
+    var(--accent-red-hover) 25%,
+    #ff4444 50%,
+    var(--accent-red-hover) 75%,
+    var(--accent-red) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: borderRotate 3s linear infinite;
+  z-index: -1;
+}
+
+.mistborn-button-danger:hover:not(.mistborn-button-disabled) {
+  background: linear-gradient(135deg, #2d0f0f 0%, #3d1515 50%, #2d0f0f 100%);
+  color: #f08080;
+  box-shadow:
+    0 0 30px rgba(139, 0, 0, 0.6),
+    0 0 60px rgba(139, 0, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.mistborn-button-danger:active:not(.mistborn-button-disabled) {
+  transform: translateY(0) scale(1);
+  box-shadow:
+    0 0 15px rgba(139, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+}
+
+/* Metallic shine effect on hover */
+.mistborn-button::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 100%
+  );
+  transform: skewX(-25deg);
+  transition: left 0.7s ease;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.mistborn-button:hover:not(.mistborn-button-disabled)::after {
+  left: 150%;
+}
+
+/* Full width */
+.mistborn-button-full {
+  width: 100%;
+}
+
+/* Disabled state */
+.mistborn-button-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-tertiary) !important;
+  box-shadow: none !important;
+  color: var(--text-muted) !important;
+}
+
+.mistborn-button-disabled:hover {
+  transform: none !important;
+}

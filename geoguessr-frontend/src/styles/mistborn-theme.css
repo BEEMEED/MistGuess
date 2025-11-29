@@ -1,0 +1,333 @@
+/* Mistborn Theme - Dark Gothic Atmosphere */
+
+:root {
+  /* Фоновые цвета - новая палитра */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #0d0d0d;
+  --bg-tertiary: #0f0f0f;
+  --bg-elevated: #131313;
+
+  /* Цвета элементов */
+  --element-dark: #1a1a1a;
+  --element-medium: #2a2a2a;
+
+  /* Рамки */
+  --border-primary: #252525;
+  --border-secondary: #3a3a3a;
+
+  /* Текст - новая палитра */
+  --text-primary: #aaaaaa;
+  --text-secondary: #9a9a9a;
+  --text-tertiary: #8a8a8a;
+  --text-muted: #7a7a7a;
+  --text-dim: #6a6a6a;
+
+  /* Фиолетовые акценты (новые) */
+  --accent-purple-dark: #3a2a4a;
+  --accent-purple-medium: #4a3a5a;
+  --accent-purple-bright: #5a4a6a;
+
+  /* Metallic accents (старые, сохранены для обратной совместимости) */
+  --metal-copper: #b87333;
+  --metal-bronze: #cd7f32;
+  --metal-iron: #707070;
+  --metal-steel: #808080;
+  --metal-pewter: #96989a;
+
+  /* Red accents for important actions */
+  --accent-red: #8b0000;
+  --accent-red-hover: #a52a2a;
+  --accent-red-glow: rgba(139, 0, 0, 0.6);
+
+  /* Статусные цвета */
+  --status-success: #6a8a6a;
+  --status-error: #8a6a6a;
+  --status-info: #5a4a6a;
+
+  /* Онлайн индикатор */
+  --online-indicator: rgba(90, 219, 90, 0.65);
+
+  /* Fog and mist colors */
+  --fog-light: rgba(255, 255, 255, 0.05);
+  --fog-medium: rgba(200, 200, 200, 0.08);
+  --fog-dark: rgba(150, 150, 150, 0.12);
+
+  /* Ash colors */
+  --ash-color: rgba(180, 180, 180, 0.4);
+
+  /* Text colors (legacy) */
+  --text-gold: #d4af37;
+
+  /* Borders and shadows - обновлено */
+  --border-metallic: 1px solid var(--border-primary);
+  --shadow-deep: 0 0 12px rgba(0, 0, 0, 0.45);
+  --shadow-medium: 0 0 10px rgba(0, 0, 0, 0.4);
+  --shadow-light: 0 0 8px rgba(0, 0, 0, 0.35);
+  --shadow-glow-purple: 0 0 8px rgba(58, 42, 74, 0.4);
+
+  /* Transitions - оптимизировано */
+  --transition-fast: 0.12s ease-out;
+  --transition-medium: 0.18s ease-out;
+  --transition-slow: 0.3s ease-out;
+}
+
+/* Global styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-primary) 100%);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Gothic font for headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-primary);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+h1 {
+  font-size: 3rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+h2 {
+  font-size: 2rem;
+  letter-spacing: 2px;
+}
+
+/* Fog overlay effect */
+.fog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 20% 80%, var(--fog-medium) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, var(--fog-light) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, var(--fog-dark) 0%, transparent 40%);
+  animation: fogDrift 20s ease-in-out infinite;
+}
+
+@keyframes fogDrift {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateX(0) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(20px) scale(1.1);
+  }
+}
+
+/* Metallic shine effect */
+.metallic-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.metallic-shine::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  animation: shine 3s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% {
+    left: -100%;
+  }
+  50%, 100% {
+    left: 200%;
+  }
+}
+
+/* Glow effect for active elements */
+.glow-effect {
+  box-shadow:
+    0 0 10px var(--metal-bronze),
+    0 0 20px var(--metal-bronze),
+    inset 0 0 10px rgba(205, 127, 50, 0.2);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 10px var(--metal-bronze),
+      0 0 20px var(--metal-bronze),
+      inset 0 0 10px rgba(205, 127, 50, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 20px var(--metal-bronze),
+      0 0 40px var(--metal-bronze),
+      inset 0 0 15px rgba(205, 127, 50, 0.4);
+  }
+}
+
+/* Card container style */
+.mistborn-card {
+  background: linear-gradient(145deg, var(--bg-secondary), var(--bg-tertiary));
+  border: var(--border-metallic);
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: var(--shadow-deep);
+  position: relative;
+  backdrop-filter: blur(10px);
+}
+
+.mistborn-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 8px;
+  padding: 2px;
+  background: linear-gradient(145deg, var(--metal-copper), var(--metal-bronze), var(--metal-steel));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Hover effect for cards */
+.mistborn-card:hover {
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+  transition: all var(--transition-medium);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--metal-bronze), var(--metal-copper));
+  border-radius: 5px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--metal-copper), var(--metal-bronze));
+}
+
+/* Page transition */
+.page-transition-enter {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: scale(1.05);
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+
+/* Loading spinner with metallic effect */
+.mistborn-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--bg-tertiary);
+  border-top: 4px solid var(--metal-bronze);
+  border-right: 4px solid var(--metal-copper);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  box-shadow: 0 0 20px var(--metal-bronze);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Text selection */
+::selection {
+  background: var(--accent-red);
+  color: var(--text-primary);
+}
+
+/* Utility classes */
+.text-center {
+  text-align: center;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.full-screen {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  .mistborn-card {
+    padding: 1.5rem;
+  }
+
+  .container {
+    padding: 1rem;
+  }
+}

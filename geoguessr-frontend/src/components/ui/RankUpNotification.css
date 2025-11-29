@@ -1,0 +1,301 @@
+.rank-up-notification {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.98);
+  animation: darkFadeIn 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+.rank-up-content {
+  background: transparent;
+  border: none;
+  padding: 60px 80px;
+  text-align: center;
+  position: relative;
+  overflow: visible;
+  animation: contentZoomIn 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rank-up-content::before {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(
+    circle,
+    rgba(139, 0, 0, 0.15) 0%,
+    rgba(205, 127, 50, 0.1) 30%,
+    transparent 70%
+  );
+  animation: vignettePulse 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.rank-up-content::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.15) 3px,
+    rgba(0, 0, 0, 0.15) 6px
+  );
+  pointer-events: none;
+  animation: scanlines 10s linear infinite;
+  opacity: 0.5;
+}
+
+.rank-up-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.rank-up-icon {
+  font-size: 64px;
+  filter: drop-shadow(0 0 20px rgba(139, 0, 0, 0.9));
+  animation: skullFloat 2s ease-in-out infinite;
+}
+
+.rank-up-title {
+  font-size: 72px;
+  font-weight: 900;
+  color: #d4a574;
+  text-transform: uppercase;
+  letter-spacing: 16px;
+  text-shadow:
+    0 0 40px rgba(205, 127, 50, 1),
+    0 0 80px rgba(205, 127, 50, 0.8),
+    0 0 120px rgba(205, 127, 50, 0.6),
+    4px 4px 12px rgba(0, 0, 0, 1);
+  margin: 0;
+  animation: titleFadeIn 2s cubic-bezier(0.4, 0, 0.2, 1), glitchText 4s ease-in-out infinite 2s;
+  font-family: 'Cinzel', 'Georgia', serif;
+  position: relative;
+  z-index: 10;
+}
+
+.rank-up-player {
+  font-size: 24px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 40px;
+  text-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
+  letter-spacing: 2px;
+}
+
+.rank-up-progression {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 30px;
+  position: relative;
+  z-index: 1;
+}
+
+.rank-up-arrow {
+  font-size: 48px;
+  font-weight: 900;
+  color: #8b0000;
+  text-shadow: 0 0 30px rgba(139, 0, 0, 0.9);
+  animation: arrowPulse 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(139, 0, 0, 1));
+}
+
+.rank-up-sparkles {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  position: relative;
+  z-index: 1;
+  margin-top: 40px;
+}
+
+.sparkle {
+  font-size: 28px;
+  display: inline-block;
+  animation: bloodDrip 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 15px rgba(139, 0, 0, 0.8));
+}
+
+.sparkle:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.sparkle:nth-child(2) {
+  animation-delay: 1s;
+}
+
+.sparkle:nth-child(3) {
+  animation-delay: 2s;
+}
+
+/* Animations */
+@keyframes darkFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes contentZoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(1.2);
+    filter: blur(10px);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes titleFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+    filter: blur(15px);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes vignettePulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes scanlines {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(4px);
+  }
+}
+
+@keyframes skullFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    filter: drop-shadow(0 0 20px rgba(139, 0, 0, 0.9));
+  }
+  50% {
+    transform: translateY(-15px) rotate(5deg);
+    filter: drop-shadow(0 0 40px rgba(139, 0, 0, 1));
+  }
+}
+
+@keyframes glitchText {
+  0%, 88%, 90%, 92%, 100% {
+    transform: translate(0);
+    text-shadow:
+      0 0 40px rgba(205, 127, 50, 1),
+      0 0 80px rgba(205, 127, 50, 0.8),
+      0 0 120px rgba(205, 127, 50, 0.6),
+      4px 4px 12px rgba(0, 0, 0, 1);
+  }
+  89% {
+    transform: translate(-5px, 2px);
+    text-shadow:
+      -2px 0 rgba(255, 0, 0, 0.7),
+      2px 0 rgba(0, 255, 255, 0.7),
+      0 0 40px rgba(205, 127, 50, 1);
+  }
+  91% {
+    transform: translate(5px, -2px);
+    text-shadow:
+      2px 0 rgba(255, 0, 0, 0.7),
+      -2px 0 rgba(0, 255, 255, 0.7),
+      0 0 40px rgba(205, 127, 50, 1);
+  }
+}
+
+@keyframes arrowPulse {
+  0%, 100% {
+    transform: translateX(0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateX(10px) scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes bloodDrip {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(15px) scale(0.9);
+    opacity: 0.9;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rank-up-content {
+    padding: 30px 40px;
+  }
+
+  .rank-up-icon {
+    font-size: 36px;
+  }
+
+  .rank-up-title {
+    font-size: 32px;
+    letter-spacing: 2px;
+  }
+
+  .rank-up-player {
+    font-size: 22px;
+  }
+
+  .rank-up-progression {
+    gap: 20px;
+  }
+
+  .rank-up-arrow {
+    font-size: 36px;
+  }
+
+  .sparkle {
+    font-size: 24px;
+  }
+}

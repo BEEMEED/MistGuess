@@ -1,0 +1,304 @@
+.final-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 2rem;
+}
+
+.final-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.final-header {
+  text-align: center;
+}
+
+.final-title {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  color: var(--text-gold);
+  text-shadow:
+    0 0 30px rgba(212, 175, 55, 0.8),
+    0 4px 10px rgba(0, 0, 0, 0.8);
+  letter-spacing: 4px;
+}
+
+.final-subtitle {
+  font-size: 1.3rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Champion Card */
+.champion-card {
+  text-align: center;
+  animation-delay: 0.2s;
+  position: relative;
+}
+
+.champion-crown {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.champion-title {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  color: var(--text-gold);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.champion-info {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.champion-icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--text-gold), #b8860b);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  font-size: 3rem;
+  color: var(--text-primary);
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, 0.9),
+    0 4px 30px rgba(0, 0, 0, 0.6);
+  border: 4px solid var(--text-gold);
+}
+
+.champion-details {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.champion-name {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-gold);
+}
+
+.champion-distance {
+  font-size: 1.3rem;
+  color: var(--text-secondary);
+}
+
+/* Final Scoreboard */
+.final-scoreboard-card {
+  animation-delay: 0.4s;
+}
+
+.final-scoreboard-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--metal-bronze);
+  font-size: 2rem;
+}
+
+.final-scoreboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.final-scoreboard-item {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--metal-iron);
+  border-radius: 4px;
+  transition: all var(--transition-fast);
+}
+
+.final-scoreboard-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateX(5px);
+}
+
+.final-scoreboard-item.first-place {
+  border-color: var(--text-gold);
+  background: linear-gradient(
+    90deg,
+    rgba(212, 175, 55, 0.15),
+    var(--bg-primary)
+  );
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+.final-scoreboard-item.second-place {
+  border-color: #c0c0c0;
+  background: linear-gradient(
+    90deg,
+    rgba(192, 192, 192, 0.1),
+    var(--bg-primary)
+  );
+}
+
+.final-scoreboard-item.third-place {
+  border-color: #cd7f32;
+  background: linear-gradient(
+    90deg,
+    rgba(205, 127, 50, 0.1),
+    var(--bg-primary)
+  );
+}
+
+.final-scoreboard-item.current-user {
+  border-color: var(--metal-bronze);
+  border-width: 2px;
+}
+
+.final-rank {
+  width: 50px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.final-player {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.final-player-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.final-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--metal-bronze), var(--metal-copper));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  box-shadow: 0 2px 10px rgba(205, 127, 50, 0.5);
+}
+
+.final-name {
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.final-distance {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--text-gold);
+  font-family: monospace;
+}
+
+/* Round Breakdown */
+.round-breakdown-card {
+  animation-delay: 0.6s;
+}
+
+.breakdown-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--metal-bronze);
+  font-size: 2rem;
+}
+
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Final Actions */
+.final-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .final-title {
+    font-size: 2.5rem;
+    letter-spacing: 2px;
+  }
+
+  .final-subtitle {
+    font-size: 1rem;
+  }
+
+  .champion-crown {
+    font-size: 3rem;
+  }
+
+  .champion-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 2rem;
+  }
+
+  .champion-name {
+    font-size: 1.8rem;
+  }
+
+  .champion-distance {
+    font-size: 1rem;
+  }
+
+  .champion-info {
+    gap: 1rem;
+  }
+
+  .final-scoreboard-item {
+    padding: 1rem;
+  }
+
+  .final-rank {
+    width: 40px;
+    font-size: 1.2rem;
+  }
+
+  .final-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .final-name {
+    font-size: 1.1rem;
+  }
+
+  .final-distance {
+    font-size: 1.1rem;
+  }
+}
