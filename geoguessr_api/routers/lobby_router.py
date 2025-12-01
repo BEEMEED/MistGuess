@@ -2,7 +2,8 @@ from fastapi import APIRouter, Body, Depends
 from services.lobby_service import LobbyService
 from services.authorization import AuthService
 from utils.LocationService import LocationService
-
+from schemas.lobby_schema import LobbyCreateRequest
+from utils.dependencies import get_invite_code
 loc = LocationService()
 router = APIRouter()
 lobby = LobbyService()
@@ -11,17 +12,14 @@ Auth = AuthService()
 
 @router.post("/create")
 async def LobbyCreate(
-    max_players: int = Body(...),
-    rounds: int = Body(...),
-    token: dict = Depends(Auth.get_current_user),
-    timer: int = Body(...),
-):
-    return lobby.create_lobby(token["login"], max_players, rounds,timer)
+    request: LobbyCreateRequest,
+    token: dict = Depends(Auth.get_current_user),):
+    return lobby.create_lobby(token["login"], request.max_players, request.rounds,request.timer)
 
 
 @router.post("/join")
 async def LobbyJoin(
-    InviteCode: str = Body(..., embed=True),
+    InviteCode: str = Depends(get_invite_code),
     token: dict = Depends(Auth.get_current_user),
 ):
     return lobby.lobby_join(token["login"], InviteCode)
@@ -29,7 +27,7 @@ async def LobbyJoin(
 
 @router.delete("/leave")
 async def LobbyLeave(
-    InviteCode: str = Body(..., embed=True),
+    InviteCode: str = Depends(get_invite_code),
     token: dict = Depends(Auth.get_current_user),
 ):
     return lobby.lobby_leave(token["login"], InviteCode)

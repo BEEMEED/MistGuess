@@ -74,6 +74,7 @@ class Admin_Panel:
 
         if login not in data:
             raise HTTPException(status_code=404, detail="User not found")
+        
         telegramID = data[login]["telegram"]
 
         del data[login]

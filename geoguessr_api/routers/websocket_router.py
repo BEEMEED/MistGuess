@@ -1,8 +1,9 @@
 from services.WebSocket_service import ws_service
-from fastapi import APIRouter, WebSocket, HTTPException, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, HTTPException, WebSocketDisconnect, Depends
 from services.authorization import AuthService
 import asyncio
 import time
+from utils.dependencies import get_invite_code
 
 auth = AuthService()
 router = APIRouter()
@@ -10,7 +11,7 @@ router = APIRouter()
 
 
 @router.websocket("/ws/{lobby_code}")
-async def GameStart(lobby_code: str, websocket: WebSocket):
+async def GameStart(websocket: WebSocket,lobby_code: str = Depends(get_invite_code)):
     await websocket.accept()
 
     token = websocket.query_params.get("token")

@@ -22,30 +22,15 @@ class Profile:
 
     async def NameEdit(self, login: str, NewName: str):
         data = self.db.read()
-        if login not in data:
-            logger.error(f"User {login} not found")
-            raise HTTPException(status_code=404, detail="User not found")
+        
+        data[login]["name"] = NewName
+        self.db.write(data)
+        
+        logger.info(f"User {login} changed name to {NewName}")
 
-        if 4 <= len(NewName) and len(NewName) <= 16:
-            data[login]["name"] = NewName
-            self.db.write(data)
-            logger.info(f"User {login} changed name to {NewName}")
-
-    async def AvatarEdit(self, login: str, file: UploadFile = File()):
-
-        if login not in self.db.read():
-            logger.error(f"User {login} not found")
-            raise HTTPException(status_code=404, detail="User not found")
-
-        if file.content_type and not file.content_type.startswith("image/"):
-            logger.error(f"Invalid file type for user {login}")
-            raise HTTPException(status_code=400, detail="Invalid file type")
+    async def AvatarEdit(self, login: str, file: UploadFile):
 
         content = await file.read()
-
-        if len(content) > 5 * 1024 * 1024:
-            logger.error(f"File size limit exceeded for user {login}")
-            raise HTTPException(status_code=400, detail="File size limit exceeded")
 
         file_ext = Path(file.filename).suffix if file.filename else ".jpg"
         if not file_ext:
@@ -60,6 +45,8 @@ class Profile:
         data = self.db.read()
         data[login]["avatar"] = str(avatar_url)
         self.db.write(data)
+
+
         logger.info(f"User {login} changed avatar")
         return {"avatar": avatar_url}
 

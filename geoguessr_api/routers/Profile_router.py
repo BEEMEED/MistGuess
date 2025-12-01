@@ -2,19 +2,20 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from services.authorization import AuthService, TokenManager
 Auth = AuthService()
 from services.profile_service import Profile
-
+from schemas.profile_schema import EditName
+from utils.dependencies import validate_avatar
 router = APIRouter()
 profile = Profile()
 
 
 @router.post("/name")
-async def name_edit(new_name: str, user: dict = Depends(Auth.get_current_user)):
-    return await profile.NameEdit(user["login"], new_name)
+async def name_edit(request: EditName, token: dict = Depends(Auth.get_current_user)):
+    return await profile.NameEdit(token["login"], request.new_name)
 
 
 @router.post("/avatar")
 async def avatar_edit(
-    file: UploadFile = File(), token: dict = Depends(Auth.get_current_user)
+    file: UploadFile = Depends(validate_avatar), token: dict = Depends(Auth.get_current_user)
 ):
     return await profile.AvatarEdit(token["login"], file)
 
