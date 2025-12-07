@@ -8,6 +8,7 @@ import type {
   LeaveLobbyRequest,
   APIError,
 } from '../types';
+import { toastManager } from './toastManager';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -30,6 +31,11 @@ class APIService {
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
+        // Handle 429 separately - show toast and don't propagate error
+        if (error.response?.status === 429) {
+          toastManager.show('Слишком много запросов. Подождите минуту.', 5000);
+          return Promise.resolve({ data: null, status: 429 } as any);
+        }
         return Promise.reject(this.handleError(error));
       }
     );
@@ -131,7 +137,7 @@ class APIService {
   ): Promise<CreateLobbyResponse> {
     // Backend gets login from token, only send max_players, rounds, and timer
     const response = await this.client.post<CreateLobbyResponse>(
-      '/lobbies/create',
+      '/lobbies',
       {
         max_players: maxPlayers,
         rounds: rounds,
@@ -142,15 +148,13 @@ class APIService {
   }
 
   public async joinLobby(username: string, inviteCode: string): Promise<void> {
-    // Backend gets login from token, only send InviteCode
-    await this.client.post('/lobbies/join', { InviteCode: inviteCode });
+    // Backend gets login from token, invite_code in URL
+    await this.client.put(`/lobbies/${inviteCode}/members`);
   }
 
   public async leaveLobby(username: string, inviteCode: string): Promise<void> {
-    // Backend gets login from token, only send InviteCode
-    await this.client.delete('/lobbies/leave', {
-      data: { InviteCode: inviteCode }
-    });
+    // Backend gets login from token, invite_code in URL
+    await this.client.delete(`/lobbies/${inviteCode}/members`);
   }
 
   // Profile endpoints
@@ -173,8 +177,8 @@ class APIService {
   }
 
   public async updateName(newName: string): Promise<void> {
-    await this.client.post('/profile/name', null, {
-      params: { new_name: newName }
+    await this.client.patch('/profile', {
+      new_name: newName
     });
   }
 
@@ -182,7 +186,7 @@ class APIService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await this.client.post('/profile/avatar', formData, {
+    const response = await this.client.put('/profile/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -207,40 +211,40 @@ class APIService {
     page: number;
     limit: number;
   }> {
-    const response = await this.client.get('/admin/main', {
+    const response = await this.client.get('/admin', {
       params: { page, limit }
     });
     return response.data;
   }
 
   public async addLocation(lat: number, lon: number, region: string): Promise<void> {
-    await this.client.post('/admin/add_location', null, {
-      params: { lat, lon, region }
+    await this.client.post('/admin/locations', {
+      lat,
+      lon,
+      region
     });
   }
 
   public async changeLocation(id: number, lat_new: number, lon_new: number, region_new: string): Promise<void> {
-    await this.client.patch('/admin/change_location', null, {
-      params: { id, lat_new, lon_new, region_new }
+    await this.client.patch(`/admin/locations/${id}`, {
+      lat_new,
+      lon_new,
+      region_new
     });
   }
 
   public async deleteLocation(id: number): Promise<void> {
-    await this.client.delete('/admin/delete_location', {
-      params: { id }
-    });
+    await this.client.delete(`/admin/locations/${id}`);
   }
 
   public async banUser(login: string, reason: string): Promise<void> {
-    await this.client.delete('/admin/ban_user', {
-      params: { login, reason }
+    await this.client.delete(`/admin/users/${login}/ban`, {
+      data: { reason }
     });
   }
 
   public async makeAdmin(login: string): Promise<void> {
-    await this.client.patch('/admin/add_admin', null, {
-      params: { login }
-    });
+    await this.client.patch(`/admin/users/${login}/role`);
   }
 
   // Telegram endpoints
@@ -251,15 +255,15 @@ class APIService {
   }
 
   public async sendTelegramMessage(login: string, message: string): Promise<void> {
-    await this.client.post('/admin/send_telegram_message', null, {
-      params: { login, message }
+    await this.client.post(`/admin/users/${login}/notifications`, {
+      message
     });
   }
 
   // Solo game endpoints
 
   public async getSoloRound(): Promise<{ lat: number; lon: number; url: string }> {
-    const response = await this.client.post<{ lat: number; lon: number; url: string }>('/lobbies/solo');
+    const response = await this.client.get<{ lat: number; lon: number; url: string }>('/lobbies/random');
     return response.data;
   }
 

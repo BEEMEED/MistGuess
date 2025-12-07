@@ -1,14 +1,15 @@
-from fastapi import APIRouter, Body, Response
+from fastapi import APIRouter, Body, Response, Request
 from services.authorization import AuthService
-
+from utils.rate_limiter import limiter
 Auth = AuthService()
 router = APIRouter()
 
 
 
 
-@router.get("/google")
-async def loginGoogle():
+@router.post("/google")
+@limiter.limit("3/minute")
+async def loginGoogle(request: Request):
     return Auth.GoogleAuth()
 
 

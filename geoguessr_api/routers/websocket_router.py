@@ -3,15 +3,17 @@ from fastapi import APIRouter, WebSocket, HTTPException, WebSocketDisconnect, De
 from services.authorization import AuthService
 import asyncio
 import time
-from utils.dependencies import get_invite_code
-
+import logging
+from utils.dependencies import Dependies
+from services.authorization import AuthService
 auth = AuthService()
+dependies = Dependies()
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-
 @router.websocket("/ws/{lobby_code}")
-async def GameStart(websocket: WebSocket,lobby_code: str = Depends(get_invite_code)):
+async def GameStart(websocket: WebSocket, lobby_code: str = Depends(dependies.get_invite_code)):
     await websocket.accept()
 
     token = websocket.query_params.get("token")
@@ -77,13 +79,14 @@ async def GameStart(websocket: WebSocket,lobby_code: str = Depends(get_invite_co
                 try:
                     await ws.send_json({"type": "player_disconnected", "player": login})
                 except Exception as e:
-                    print(f"failed to send disconnect {login}: {e}")
+
+                    logger.error(f"failed to send disconnect {login}: {e}")
 
         asyncio.create_task(ws_service.kick_timer(login, lobby_code, websocket))
 
     except Exception as e:
-        print(f"websocket error: {e}")
+        logger.error(f"WebSocket error: {str(e)}")
         import traceback
 
-        traceback.print_exc()
+        logger.exception(traceback.format_exc())
         await ws_service.player_left(token_data["login"], lobby_code, websocket)

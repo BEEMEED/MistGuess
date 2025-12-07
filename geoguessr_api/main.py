@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, requests, Request, Response
+from slowapi.errors import RateLimitExceeded
 from fastapi.middleware.cors import CORSMiddleware
+from utils.rate_limiter import limiter
 from fastapi.staticfiles import StaticFiles
 from routers.authorization_router import router as auth
 from routers.lobby_router import router as lobby
@@ -8,7 +10,10 @@ from routers.Profile_router import router as profile
 from routers.admin_router import router as admin
 from routers.telegram import router as telegram
 from routers.mathmaking_router import router as mathmaking
+from slowapi.middleware import SlowAPIMiddleware
 import logging
+from services.mathmaking_service import mathmaking_instance
+import asyncio
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,7 +23,6 @@ logging.basicConfig(
 
 
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:5174"],
@@ -26,8 +30,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-from services.mathmaking_service import mathmaking_instance
-import asyncio
+
+
+async def rate_lmit(request: Request, exc: RateLimitExceeded):
+    return Response(status_code=429)
+
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_lmit)  # type: ignore
+app.add_middleware(SlowAPIMiddleware)
 
 
 @app.on_event("startup")

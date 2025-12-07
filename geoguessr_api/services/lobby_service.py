@@ -5,7 +5,7 @@ from services.authorization import AuthService
 from utils.LocationService import LocationService
 import secrets
 import logging
-from utils.dependencies import get_invite_code
+
 
 logger = logging.getLogger(__name__)
 

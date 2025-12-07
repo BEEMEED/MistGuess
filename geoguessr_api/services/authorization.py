@@ -38,35 +38,6 @@ class AuthService:
     def __init__(self) -> None:
         self.db = DataBase(config.DB_USERS)
 
-    async def get_current_user(self, request: Request):
-        try:
-            token = request.cookies.get("access_token")
-
-            if not token:
-                logger.error("No token provided")
-                raise HTTPException(401, "no token")
-
-            data_token = TokenManager.decode_token(token)
-            login = data_token.get("login")
-
-            if not login:
-                logger.error("Invalid token: no login in token")
-                raise HTTPException(401, "invalid token")
-
-            data = self.db.read()
-
-            if login not in data:
-                logger.error(f"User {login} not found in database")
-                raise HTTPException(401, "user not found")
-
-            role = data[login].get("role", "user")
-            return {"login": login, "role": role}
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"Token validation error: {str(e)}")
-            raise HTTPException(401, "invalid token")
-    
     async def verifyToken(self, token: str):
         try:
             data_token = TokenManager.decode_token(token)

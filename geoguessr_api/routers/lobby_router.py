@@ -1,39 +1,50 @@
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, Request
 from services.lobby_service import LobbyService
 from services.authorization import AuthService
 from utils.LocationService import LocationService
 from schemas.lobby_schema import LobbyCreateRequest
-from utils.dependencies import get_invite_code
+from utils.dependencies import Dependies
+from utils.rate_limiter import limiter
+
 loc = LocationService()
 router = APIRouter()
 lobby = LobbyService()
-Auth = AuthService()
+dependies = Dependies()
 
 
-@router.post("/create")
+@router.post("/")
+@limiter.limit("2/minute")
 async def LobbyCreate(
     request: LobbyCreateRequest,
-    token: dict = Depends(Auth.get_current_user),):
-    return lobby.create_lobby(token["login"], request.max_players, request.rounds,request.timer)
+    req: Request,
+    token: dict = Depends(dependies.get_current_user),
+):
+    return lobby.create_lobby(
+        token["login"], request.max_players, request.rounds, request.timer
+    )
 
 
-@router.post("/join")
+@router.put("/{invite_code}/members")
+@limiter.limit("2/minute")
 async def LobbyJoin(
-    InviteCode: str = Depends(get_invite_code),
-    token: dict = Depends(Auth.get_current_user),
+    invite_code: str,
+    request: Request,
+    token: dict = Depends(dependies.get_current_user),
 ):
-    return lobby.lobby_join(token["login"], InviteCode)
+    validate_code = await dependies.get_invite_code(invite_code)
+    return lobby.lobby_join(token["login"], validate_code)
 
 
-@router.delete("/leave")
+@router.delete("/{invite_code}/members")
 async def LobbyLeave(
-    InviteCode: str = Depends(get_invite_code),
-    token: dict = Depends(Auth.get_current_user),
+    invite_code: str,
+    token: dict = Depends(dependies.get_current_user),
 ):
-    return lobby.lobby_leave(token["login"], InviteCode)
+    validate_code = await dependies.get_invite_code(invite_code)
+    return lobby.lobby_leave(token["login"], validate_code)
 
 
-@router.post("/solo")
+@router.get("/random")
 async def playSolo():
     result = loc.GetRandomLocation(1)
     return result.get(1, {})
