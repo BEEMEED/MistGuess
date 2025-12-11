@@ -21,9 +21,9 @@ export const RoundResults: React.FC<RoundResultsProps> = ({ result, onContinue, 
   const [countdown, setCountdown] = useState(5);
 
   // Helper function to get player display name
-  const getPlayerName = (login: string): string => {
-    const player = players.find(p => p.login === login);
-    return player?.name || login;
+  const getPlayerName = (user_id: number): string => {
+    const player = players.find(p => p.user_id === user_id);
+    return player?.name || `User${user_id}`;
   };
 
   useEffect(() => {

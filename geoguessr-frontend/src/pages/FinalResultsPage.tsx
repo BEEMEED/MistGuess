@@ -20,12 +20,12 @@ export const FinalResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const [expandedRounds, setExpandedRounds] = useState<Set<number>>(new Set());
   const [rankUpQueue, setRankUpQueue] = useState<Array<{
-    login: string;
+    user_id: number;
     old_rank: string;
     new_rank: string;
   }>>([]);
   const [currentRankUp, setCurrentRankUp] = useState<{
-    login: string;
+    user_id: number;
     old_rank: string;
     new_rank: string;
   } | null>(null);
@@ -35,7 +35,7 @@ export const FinalResultsPage: React.FC = () => {
     if (gameState?.rankUps && gameState.rankUps.length > 0 && user) {
       console.log('Loading rankUps from gameState:', gameState.rankUps);
       // Only show rank up for current user
-      const myRankUp = gameState.rankUps.find(ru => ru.login === user.login);
+      const myRankUp = gameState.rankUps.find(ru => ru.user_id === user.user_id);
       if (myRankUp) {
         setRankUpQueue([myRankUp]);
       }
@@ -74,10 +74,10 @@ export const FinalResultsPage: React.FC = () => {
   };
 
   // Helper function to get player info
-  const getPlayerInfo = (login: string) => {
-    const player = gameState?.players.find((p) => p.login === login);
+  const getPlayerInfo = (user_id: number) => {
+    const player = gameState?.players.find((p) => p.user_id === user_id);
     return {
-      name: player?.name || login,
+      name: player?.name || `User${user_id}`,
       avatar: player?.avatar || '',
       rank: player?.rank || 'Ashborn',
     };
@@ -95,9 +95,9 @@ export const FinalResultsPage: React.FC = () => {
 
   const sortedPlayers = Object.entries(gameState.finalResults.totalDistances)
     .sort(([, distA], [, distB]) => distA - distB)
-    .map(([player, distance]) => ({ player, distance }));
+    .map(([player, distance]) => ({ player: parseInt(player), distance }));
 
-  const isWinner = gameState.finalResults.winner === user.login;
+  const isWinner = gameState.finalResults.winner === user.user_id;
 
   return (
     <div className="final-page">
@@ -145,7 +145,7 @@ export const FinalResultsPage: React.FC = () => {
               <div
                 key={result.player}
                 className={`final-scoreboard-item fade-in ${
-                  result.player === user.login ? 'current-user' : ''
+                  result.player === user.user_id ? 'current-user' : ''
                 } ${index === 0 ? 'first-place' : ''} ${
                   index === 1 ? 'second-place' : ''
                 } ${index === 2 ? 'third-place' : ''}`}
@@ -201,7 +201,7 @@ export const FinalResultsPage: React.FC = () => {
 
       {currentRankUp && (
         <RankUpNotification
-          playerName={getPlayerInfo(currentRankUp.login).name}
+          playerName={getPlayerInfo(currentRankUp.user_id).name}
           oldRank={currentRankUp.old_rank}
           newRank={currentRankUp.new_rank}
           onComplete={handleRankUpComplete}

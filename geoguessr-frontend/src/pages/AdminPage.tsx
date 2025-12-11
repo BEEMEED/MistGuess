@@ -18,9 +18,9 @@ interface Location {
 }
 
 interface AdminData {
-  data_user: [string, any][];
-  data_lobby: [string, any][];
-  data_location: [string, any][];
+  data_user: any[];
+  data_lobby: any[];
+  data_location: any[];
   total_users: number;
   total_lobbies: number;
   total_locations: number;
@@ -180,7 +180,7 @@ export const AdminPage: React.FC = () => {
       message: `Are you sure you want to ban user "${banUserLogin}"? Reason: ${banReason}`,
       onConfirm: async () => {
         try {
-          await apiService.banUser(banUserLogin, banReason);
+          await apiService.banUser(parseInt(banUserLogin), banReason);
           setBanUserLogin('');
           setBanReason('');
           setShowBanUser(false);
@@ -207,7 +207,7 @@ export const AdminPage: React.FC = () => {
     }
 
     try {
-      await apiService.sendTelegramMessage(login, telegramMessage);
+      await apiService.sendTelegramMessage(parseInt(login), telegramMessage);
       setTelegramMessage('');
       setOpenMessageRow(null);
       showToast('✓ Message sent successfully');
@@ -243,7 +243,7 @@ export const AdminPage: React.FC = () => {
       message: `Are you sure you want to grant admin privileges to "${makeAdminLogin}"?`,
       onConfirm: async () => {
         try {
-          await apiService.makeAdmin(makeAdminLogin);
+          await apiService.makeAdmin(parseInt(makeAdminLogin));
           setMakeAdminLogin('');
           setShowMakeAdmin(false);
           await loadAdminData();
@@ -345,8 +345,8 @@ export const AdminPage: React.FC = () => {
     );
   }
 
-  // Convert array of tuples to object for easier filtering
-  const locations = adminData.data_location ? Object.fromEntries(adminData.data_location) : {};
+  // Use location array directly
+  const locations = adminData.data_location || [];
 
   return (
     <div className="admin-page">
@@ -486,11 +486,11 @@ export const AdminPage: React.FC = () => {
                   </thead>
                   <tbody>
                     {(() => {
-                      const filteredLocations = Object.entries(locations).filter(([id, loc]: [string, any]) => {
+                      const filteredLocations = locations.filter((loc: any) => {
                         if (!searchLocation) return true;
                         const search = searchLocation.toLowerCase();
                         return (
-                          id.toLowerCase().includes(search) ||
+                          loc.id.toString().toLowerCase().includes(search) ||
                           loc.lat.toString().toLowerCase().includes(search) ||
                           loc.lon.toString().toLowerCase().includes(search) ||
                           loc.region.toLowerCase().includes(search)
@@ -507,22 +507,22 @@ export const AdminPage: React.FC = () => {
                         );
                       }
 
-                      return filteredLocations.map(([id, loc]: [string, any]) => (
-                        <tr key={id}>
-                          <td className="copyable" onClick={() => copyToClipboard(id, 'ID')}>{id}</td>
+                      return filteredLocations.map((loc: any) => (
+                        <tr key={loc.id}>
+                          <td className="copyable" onClick={() => copyToClipboard(loc.id.toString(), 'ID')}>{loc.id}</td>
                           <td className="copyable" onClick={() => copyToClipboard(loc.lat.toString(), 'Latitude')}>{loc.lat}</td>
                           <td className="copyable" onClick={() => copyToClipboard(loc.lon.toString(), 'Longitude')}>{loc.lon}</td>
                           <td className="copyable" onClick={() => copyToClipboard(loc.region, 'Region')}>{loc.region}</td>
                           <td className="admin-table__actions">
                             <button
                               className="action-btn edit-btn"
-                              onClick={() => openEditLocation(parseInt(id), loc)}
+                              onClick={() => openEditLocation(loc.id, loc)}
                             >
                               Edit
                             </button>
                             <button
                               className="action-btn delete-btn"
-                              onClick={() => handleDeleteLocation(parseInt(id))}
+                              onClick={() => handleDeleteLocation(loc.id)}
                             >
                               Delete
                             </button>
@@ -626,14 +626,14 @@ export const AdminPage: React.FC = () => {
                   </thead>
                   <tbody>
                     {(() => {
-                      const filteredUsers = adminData.data_user.filter(([login, userData]: [string, any]) => {
+                      const filteredUsers = adminData.data_user.filter((user: any) => {
                         if (!searchUser) return true;
                         const search = searchUser.toLowerCase();
                         return (
-                          login.toLowerCase().includes(search) ||
-                          (userData.name || '').toLowerCase().includes(search) ||
-                          (userData.xp || 0).toString().includes(search) ||
-                          (userData.rank || '').toLowerCase().includes(search)
+                          (user.username || '').toLowerCase().includes(search) ||
+                          (user.name || '').toLowerCase().includes(search) ||
+                          (user.xp || 0).toString().includes(search) ||
+                          (user.rank || '').toLowerCase().includes(search)
                         );
                       });
 
@@ -647,25 +647,25 @@ export const AdminPage: React.FC = () => {
                         );
                       }
 
-                      return filteredUsers.flatMap(([login, userData]: [string, any]) => [
-                        <tr key={login}>
-                          <td className="copyable" onClick={() => copyToClipboard(login, 'Login')}>{login}</td>
-                          <td className="copyable" onClick={() => copyToClipboard(userData.name || 'N/A', 'Name')}>{userData.name || 'N/A'}</td>
-                          <td className="copyable" onClick={() => copyToClipboard((userData.xp || 0).toString(), 'XP')}>{userData.xp || 0}</td>
-                          <td className="copyable" onClick={() => copyToClipboard(userData.rank || 'N/A', 'Rank')}>{userData.rank || 'N/A'}</td>
+                      return filteredUsers.flatMap((user: any) => [
+                        <tr key={user.id}>
+                          <td className="copyable" onClick={() => copyToClipboard(user.username, 'Username')}>{user.username}</td>
+                          <td className="copyable" onClick={() => copyToClipboard(user.name || 'N/A', 'Name')}>{user.name || 'N/A'}</td>
+                          <td className="copyable" onClick={() => copyToClipboard((user.xp || 0).toString(), 'XP')}>{user.xp || 0}</td>
+                          <td className="copyable" onClick={() => copyToClipboard(user.rank || 'N/A', 'Rank')}>{user.rank || 'N/A'}</td>
                           <td>
                             <span
-                              className={`role-badge ${userData.role === 'admin' ? 'role-admin' : 'role-user'} copyable`}
-                              onClick={() => copyToClipboard(userData.role || 'user', 'Role')}
+                              className={`role-badge ${user.role === 'admin' ? 'role-admin' : 'role-user'} copyable`}
+                              onClick={() => copyToClipboard(user.role || 'user', 'Role')}
                             >
-                              {userData.role || 'user'}
+                              {user.role || 'user'}
                             </span>
                           </td>
                           <td
                             className="copyable"
-                            onClick={() => userData.telegram && userData.telegram !== 'null' && copyToClipboard(userData.telegram, 'Telegram ID')}
+                            onClick={() => user.telegram && user.telegram !== 'null' && copyToClipboard(user.telegram, 'Telegram ID')}
                           >
-                            {userData.telegram && userData.telegram !== 'null' ? (
+                            {user.telegram && user.telegram !== 'null' ? (
                               <span className="telegram-linked">✓ Linked</span>
                             ) : (
                               <span className="telegram-not-linked">✗ Not linked</span>
@@ -674,23 +674,23 @@ export const AdminPage: React.FC = () => {
                           <td className="admin-table__actions">
                             <button
                               className="action-btn edit-btn"
-                              onClick={() => handleQuickSendMessage(login, userData.telegram)}
-                              disabled={!userData.telegram || userData.telegram === 'null'}
-                              title={!userData.telegram || userData.telegram === 'null' ? 'User has no Telegram linked' : 'Send Telegram message'}
+                              onClick={() => handleQuickSendMessage(user.id, user.telegram)}
+                              disabled={!user.telegram || user.telegram === 'null'}
+                              title={!user.telegram || user.telegram === 'null' ? 'User has no Telegram linked' : 'Send Telegram message'}
                             >
                               Message
                             </button>
                             <button
                               className="action-btn delete-btn"
-                              onClick={() => handleQuickBanUser(login)}
-                              disabled={userData.role === 'admin'}
+                              onClick={() => handleQuickBanUser(user.id)}
+                              disabled={user.role === 'admin'}
                             >
                               Ban
                             </button>
                           </td>
                         </tr>,
-                        openMessageRow === login && (
-                          <tr key={`${login}-message`} className="message-row">
+                        openMessageRow === user.id && (
+                          <tr key={`${user.id}-message`} className="message-row">
                             <td colSpan={7}>
                               <div className="inline-message-form">
                                 <input
@@ -701,14 +701,14 @@ export const AdminPage: React.FC = () => {
                                   onChange={(e) => setTelegramMessage(e.target.value)}
                                   onKeyPress={(e) => {
                                     if (e.key === 'Enter' && telegramMessage.trim()) {
-                                      handleSendTelegramMessage(login);
+                                      handleSendTelegramMessage(user.id);
                                     }
                                   }}
                                   autoFocus
                                 />
                                 <button
                                   className="action-btn edit-btn"
-                                  onClick={() => handleSendTelegramMessage(login)}
+                                  onClick={() => handleSendTelegramMessage(user.id)}
                                   disabled={!telegramMessage.trim()}
                                 >
                                   Send

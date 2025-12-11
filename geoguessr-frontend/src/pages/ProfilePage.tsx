@@ -163,10 +163,10 @@ export const ProfilePage: React.FC = () => {
               </MistbornButton>
             </div>
 
-            {/* Login section (read-only) */}
+            {/* User ID section (read-only) */}
             <div className="profile-section">
-              <h2 className="profile-section__label">Username</h2>
-              <div className="profile-section__value">{user?.login}</div>
+              <h2 className="profile-section__label">User ID</h2>
+              <div className="profile-section__value">{user?.user_id}</div>
             </div>
 
             {/* Telegram section */}

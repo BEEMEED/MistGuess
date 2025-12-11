@@ -24,8 +24,19 @@ class APIService {
       withCredentials: true, // Send cookies with requests
     });
 
-    // Interceptor no longer needed - cookies are sent automatically
-    // this.client.interceptors.request.use(...)
+    // Add request interceptor to attach Authorization header
+    this.client.interceptors.request.use(
+      (config) => {
+        const token = this.getToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
 
     // Add response interceptor for error handling
     this.client.interceptors.response.use(
@@ -130,12 +141,11 @@ class APIService {
   // Lobby endpoints
 
   public async createLobby(
-    username: string,
     maxPlayers: number,
     rounds: number,
     timer: number
   ): Promise<CreateLobbyResponse> {
-    // Backend gets login from token, only send max_players, rounds, and timer
+    // Backend gets user_id from token, only send max_players, rounds, and timer
     const response = await this.client.post<CreateLobbyResponse>(
       '/lobbies',
       {
@@ -147,13 +157,13 @@ class APIService {
     return response.data;
   }
 
-  public async joinLobby(username: string, inviteCode: string): Promise<void> {
-    // Backend gets login from token, invite_code in URL
+  public async joinLobby(inviteCode: string): Promise<void> {
+    // Backend gets user_id from token, invite_code in URL
     await this.client.put(`/lobbies/${inviteCode}/members`);
   }
 
-  public async leaveLobby(username: string, inviteCode: string): Promise<void> {
-    // Backend gets login from token, invite_code in URL
+  public async leaveLobby(inviteCode: string): Promise<void> {
+    // Backend gets user_id from token, invite_code in URL
     await this.client.delete(`/lobbies/${inviteCode}/members`);
   }
 
@@ -237,33 +247,33 @@ class APIService {
     await this.client.delete(`/admin/locations/${id}`);
   }
 
-  public async banUser(login: string, reason: string): Promise<void> {
-    await this.client.delete(`/admin/users/${login}/ban`, {
+  public async banUser(user_id: number, reason: string): Promise<void> {
+    await this.client.delete(`/admin/users/${user_id}/ban`, {
       data: { reason }
     });
   }
 
-  public async makeAdmin(login: string): Promise<void> {
-    await this.client.patch(`/admin/users/${login}/role`);
+  public async makeAdmin(user_id: number): Promise<void> {
+    await this.client.patch(`/admin/users/${user_id}/role`);
   }
 
   // Telegram endpoints
 
-  public async getTelegramLinkCode(): Promise<{ code: string; login: string }> {
-    const response = await this.client.post<{ code: string; login: string }>('/telegram/auth');
+  public async getTelegramLinkCode(): Promise<{ code: string; user_id: number }> {
+    const response = await this.client.post<{ code: string; user_id: number }>('/telegram/auth');
     return response.data;
   }
 
-  public async sendTelegramMessage(login: string, message: string): Promise<void> {
-    await this.client.post(`/admin/users/${login}/notifications`, {
+  public async sendTelegramMessage(user_id: number, message: string): Promise<void> {
+    await this.client.post(`/admin/users/${user_id}/notifications`, {
       message
     });
   }
 
   // Solo game endpoints
 
-  public async getSoloRound(): Promise<{ lat: number; lon: number; url: string }> {
-    const response = await this.client.get<{ lat: number; lon: number; url: string }>('/lobbies/random');
+  public async getSoloRound(): Promise<{ lat: number; lon: number }> {
+    const response = await this.client.get<{ lat: number; lon: number }>('/lobbies/random');
     return response.data;
   }
 

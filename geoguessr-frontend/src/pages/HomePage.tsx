@@ -13,7 +13,7 @@ import './HomePage.css';
 export const HomePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lon: number; url: string } | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [guessMarker, setGuessMarker] = useState<{ lat: number; lng: number } | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [distance, setDistance] = useState(0);

@@ -42,9 +42,14 @@ export const RoundResultsPage: React.FC = () => {
     );
   }
 
-  const isHost = gameState.host === user.login;
+  const isHost = gameState.host === user.user_id;
   const currentRoundResult = gameState.roundResults[gameState.roundResults.length - 1];
   const isLastRound = gameState.currentRound >= gameState.totalRounds;
+
+  const getPlayerName = (user_id: number): string => {
+    const player = gameState.players.find((p) => p.user_id === user_id);
+    return player?.name || `User${user_id}`;
+  };
 
   if (!currentRoundResult) {
     return (
@@ -101,10 +106,10 @@ export const RoundResultsPage: React.FC = () => {
             <h2 className="winner-title">Round Winner</h2>
             <div className="winner-info">
               <div className="winner-icon">
-                {currentRoundResult.winner.player.charAt(0).toUpperCase()}
+                {getPlayerName(currentRoundResult.winner.player).charAt(0).toUpperCase()}
               </div>
               <div className="winner-details">
-                <div className="winner-name">{currentRoundResult.winner.player}</div>
+                <div className="winner-name">{getPlayerName(currentRoundResult.winner.player)}</div>
                 <div className="winner-distance">
                   {(currentRoundResult.winner.distance / 1000).toFixed(2)} km away
                 </div>
@@ -119,16 +124,16 @@ export const RoundResultsPage: React.FC = () => {
                 <div
                   key={result.player}
                   className={`scoreboard-item fade-in ${
-                    result.player === user.login ? 'current-user' : ''
+                    result.player === user.user_id ? 'current-user' : ''
                   } ${index === 0 ? 'first-place' : ''}`}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <div className="scoreboard-rank">#{index + 1}</div>
                   <div className="scoreboard-player">
                     <div className="scoreboard-icon">
-                      {result.player.charAt(0).toUpperCase()}
+                      {getPlayerName(result.player).charAt(0).toUpperCase()}
                     </div>
-                    <div className="scoreboard-name">{result.player}</div>
+                    <div className="scoreboard-name">{getPlayerName(result.player)}</div>
                   </div>
                   <div className="scoreboard-distance">
                     {(result.distance / 1000).toFixed(2)} km

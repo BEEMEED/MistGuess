@@ -1,0 +1,81 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select,func
+from models.lobby import Lobby
+from sqlalchemy.exc import IntegrityError
+import secrets
+from repositories.location_repository import LocationRepository
+class LobbyRepository:
+    
+    @staticmethod
+    async def create(db: AsyncSession,host_id:int,max_players:int,rounds_num:int,timer:int):
+        InviteCode = secrets.token_urlsafe(6)
+        locations_objs = await LocationRepository.get_random_location(db, rounds_num)
+        locations = [{"lat": loc.lat, "lon": loc.lon, "region": loc.region, "url": f"https://www.google.com/maps/@{loc.lat},{loc.lon},17z"} for loc in locations_objs]
+        lobby = Lobby(invite_code=InviteCode, host_id=host_id, locations=locations,max_players=max_players,rounds_num=rounds_num,timer=timer,users=[host_id])
+
+        db.add(lobby)
+        await db.commit()
+        await db.refresh(lobby)
+        return lobby
+    
+    @staticmethod
+    async def get_by_code(db: AsyncSession, lobby_code: str):
+        result = await db.execute(select(Lobby).filter(Lobby.invite_code == lobby_code))
+        return result.scalar_one_or_none()
+    
+    @staticmethod
+    async def add_user(db: AsyncSession, lobby_code: str, user_id: int):
+        result = await db.execute(select(Lobby).filter(Lobby.invite_code == lobby_code))
+        lobby = result.scalar_one_or_none()
+        if not lobby:
+            return None
+
+        if user_id in lobby.users:
+            return lobby
+
+        
+        lobby.users = lobby.users + [user_id]
+        await db.commit()
+        await db.refresh(lobby)
+        return lobby
+    
+    @staticmethod
+    async def remove_user(db: AsyncSession, user_id: int,invite_code: str):
+        result = await db.execute(select(Lobby).filter(Lobby.invite_code == invite_code))
+        lobby = result.scalar_one_or_none()
+        if not lobby:
+            return None
+        if user_id not in lobby.users:
+            return None
+
+       
+        lobby.users = [uid for uid in lobby.users if uid != user_id]
+        await db.commit()
+        await db.refresh(lobby)
+        return lobby
+    
+    @staticmethod
+    async def delete(db: AsyncSession, lobby_code: str):
+        result = await db.execute(select(Lobby).filter(Lobby.invite_code == lobby_code))
+        lobby = result.scalar_one_or_none()
+        if not lobby:
+            return None
+        
+        await db.delete(lobby)
+        await db.commit()
+        return lobby
+    
+    @staticmethod
+    async def get_paginated(db: AsyncSession, offset:int, limit: int):
+        result = await db.execute(select(Lobby).offset(offset).limit(limit))
+        return result.scalars().all()
+    
+    @staticmethod
+    async def count_all(db: AsyncSession):
+        result = await db.execute(select(func.count(Lobby.id)))
+        return result.scalar_one()
+    
+    @staticmethod
+    async def get_by_user_id(db: AsyncSession, user_id: int):
+        result = await db.execute(select(Lobby).filter(Lobby.users.contains([user_id])))
+        return result.scalars().all()

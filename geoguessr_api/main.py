@@ -13,6 +13,8 @@ from routers.mathmaking_router import router as mathmaking
 from slowapi.middleware import SlowAPIMiddleware
 import logging
 from services.mathmaking_service import mathmaking_instance
+from database.database import engine
+from database.base import Base
 import asyncio
 
 logging.basicConfig(
@@ -20,6 +22,8 @@ logging.basicConfig(
     format="[%(asctime)s] %(levelname)s - %(funcName)s - %(message)s",
     handlers=[logging.FileHandler("app.log"), logging.StreamHandler()],
 )
+
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI()
@@ -43,8 +47,10 @@ app.add_middleware(SlowAPIMiddleware)
 
 @app.on_event("startup")
 async def startup_event():
-    print("queue started")
+    logger.info("Matchmaking queue started")
     asyncio.create_task(mathmaking_instance.mathmaging_loop())
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -58,4 +64,4 @@ app.include_router(profile, prefix="/profile", tags=["profile"])
 
 
 if __name__ == "__main__":
-    print("start")
+    logger.info("FastAPI application starting")

@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Body, Depends, Request
+from fastapi import APIRouter, Body, Depends, Request, HTTPException
 from services.lobby_service import LobbyService
 from services.authorization import AuthService
 from utils.LocationService import LocationService
 from schemas.lobby_schema import LobbyCreateRequest
 from utils.dependencies import Dependies
 from utils.rate_limiter import limiter
+from database.database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from repositories.location_repository import LocationRepository
 
 loc = LocationService()
 router = APIRouter()
@@ -15,12 +18,13 @@ dependies = Dependies()
 @router.post("/")
 @limiter.limit("2/minute")
 async def LobbyCreate(
-    request: LobbyCreateRequest,
-    req: Request,
+    body: LobbyCreateRequest,
+    request: Request,
     token: dict = Depends(dependies.get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    return lobby.create_lobby(
-        token["login"], request.max_players, request.rounds, request.timer
+    return await lobby.create_lobby(
+        db, token["user_id"], body.max_players, body.rounds, body.timer
     )
 
 
@@ -30,21 +34,26 @@ async def LobbyJoin(
     invite_code: str,
     request: Request,
     token: dict = Depends(dependies.get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    validate_code = await dependies.get_invite_code(invite_code)
-    return lobby.lobby_join(token["login"], validate_code)
+    validate_code = await dependies.get_invite_code(invite_code, db)
+    return await lobby.lobby_join(db, invite_code, token["user_id"])
 
 
 @router.delete("/{invite_code}/members")
 async def LobbyLeave(
     invite_code: str,
     token: dict = Depends(dependies.get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    validate_code = await dependies.get_invite_code(invite_code)
-    return lobby.lobby_leave(token["login"], validate_code)
+    validate_code = await dependies.get_invite_code(invite_code, db)
+    return await lobby.lobby_leave(db, invite_code, token["user_id"])
 
 
 @router.get("/random")
-async def playSolo():
-    result = loc.GetRandomLocation(1)
-    return result.get(1, {})
+async def singleplay(db: AsyncSession = Depends(get_db)):
+    locations = await LocationRepository.get_random_location(db, 1)
+    if not locations:
+        raise HTTPException(status_code=404, detail="No locations available")
+    location = locations[0]
+    return {"lat": location.lat, "lon": location.lon}

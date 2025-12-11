@@ -6,8 +6,11 @@ from pathlib import Path
 from pydantic import BaseModel
 import os
 import logging
-from services.WebSocket_service import ws_service
-
+from repositories.location_repository import LocationRepository
+from sqlalchemy.ext.asyncio import AsyncSession
+from repositories.user_repository import UserRepository
+from repositories.lobby_repository import LobbyRepository
+from repositories.location_repository import LocationRepository
 
 logger = logging.getLogger(__name__)
 
@@ -16,19 +19,16 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 class Profile:
-    def __init__(self) -> None:
-        self.db = DataBase(config.DB_USERS)
-        self.ws = ws_service
-
-    async def NameEdit(self, login: str, NewName: str):
-        data = self.db.read()
+    
+    @staticmethod
+    async def NameEdit(db: AsyncSession, user_id: int, NewName: str):
         
-        data[login]["name"] = NewName
-        self.db.write(data)
+        await UserRepository.update(db,user_id,name=NewName)
         
-        logger.info(f"User {login} changed name to {NewName}")
+        logger.info(f"User {user_id} changed name to {NewName}")
 
-    async def AvatarEdit(self, login: str, file: UploadFile):
+    @staticmethod
+    async def AvatarEdit(db: AsyncSession, user_id: int, file: UploadFile):
 
         content = await file.read()
 
@@ -36,36 +36,38 @@ class Profile:
         if not file_ext:
             file_ext = ".jpg"
 
-        file_path = UPLOAD_DIR / f"{login}{file_ext}"
+        file_path = UPLOAD_DIR / f"{user_id}{file_ext}"
         with open(file_path, "wb") as f:
             f.write(content)
 
-        avatar_url = f"static/avatars/{login}{file_ext}"
+        avatar_url = f"static/avatars/{user_id}{file_ext}"
 
-        data = self.db.read()
-        data[login]["avatar"] = str(avatar_url)
-        self.db.write(data)
+        await UserRepository.update(db,user_id,avatar=avatar_url)
 
 
-        logger.info(f"User {login} changed avatar")
+        logger.info(f"User {user_id} changed avatar")
         return {"avatar": avatar_url}
 
 
-    def get_me(self, login: str):
-        data = self.db.read()
-        
+    @staticmethod
+    async def get_me(db: AsyncSession, user_id: int):
+        user = await UserRepository.get_by_id(db, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
         message = {
-            "name": data[login]["name"],
-            "avatar": data[login]["avatar"],
-            "xp": data[login].get("xp", 0),
-            "rank": data[login].get("rank", "Ashborn"),
-            "role": data[login].get("role", "user"),
+            "name": user.name,
+            "avatar": user.avatar,
+            "xp": user.xp,
+            "rank": user.rank,
+            "role": user.role,
             
         }
-        if self.ws:
-            message["lobbys"] = self.ws.get_active_lobbies(login)
+        lobbies = await LobbyRepository.get_by_user_id(db, user_id)
+        message["lobbies"] = [{"code": lobby.invite_code, "host_id": lobby.host_id} for lobby in lobbies]
         return message
-
-    def get_avatar(self, login: str):
-        data = self.db.read()
-        return data[login]["avatar"]
+    @staticmethod
+    async def get_avatar(db: AsyncSession, user_id: int):
+        user = await UserRepository.get_by_id(db, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user.avatar

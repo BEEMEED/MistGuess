@@ -2,17 +2,19 @@ from fastapi import WebSocket
 from config import config
 import logging
 import asyncio
-
+from repositories.location_repository import LocationRepository
+from sqlalchemy.ext.asyncio import AsyncSession
+from repositories.user_repository import UserRepository
+from repositories.lobby_repository import LobbyRepository
+from repositories.location_repository import LocationRepository
 logger = logging.getLogger(__name__)
-from services.lobby_service import LobbyService
-from utils.bd_service import DataBase
+
 
 
 class mathmaking_service:
     def __init__(self) -> None:
         self.queue = []
-        self.lobby = LobbyService()
-        self.user_db = DataBase(config.DB_USERS)
+        
 
     async def join_queue(self, login, ws, xp):
         self.queue = [(l, w, x) for l, w, x in self.queue if l != login]
@@ -40,28 +42,31 @@ class mathmaking_service:
                             )
 
                             try:
-                                lobby_result = self.lobby.create_lobby(
-                                    login_1, 2, 5, 60
-                                )
-                                invite_code = lobby_result["InviteCode"]
+                                from database.database import asyncsession
+                                async with asyncsession() as db:
+                                    lobby = await LobbyRepository.create(db=db,host_id=login_1,max_players=2,rounds_num=5,timer=30)
+                                    invite_code = lobby.invite_code
 
-                                self.lobby.lobby_join(login_2, invite_code)
+                                    await LobbyRepository.add_user(db, invite_code, login_2)
 
-                                user = self.user_db.read()
-
+                                    user1 = await UserRepository.get_by_id(db,login_1)
+                                    user2 = await UserRepository.get_by_id(db,login_2)
+                                    assert user1
+                                    assert user2
+                
                                 opponent1_info = {
-                                    "login": login_1,
-                                    "name": user[login_1]["name"],
-                                    "xp": xp_1,
-                                    "rank": user[login_1]["rank"],
-                                    "avatar": user[login_1]["avatar"],
+                                    "user_id": user1.id,
+                                    "name": user1.name,
+                                    "xp": user1.xp,
+                                    "rank": user1.rank,
+                                    "avatar": user1.avatar,
                                 }
                                 oppenent2_info = {
-                                    "login": login_2,
-                                    "name": user[login_2]["name"],
-                                    "xp": xp_2,
-                                    "rank": user[login_2]["rank"],
-                                    "avatar": user[login_2]["avatar"],
+                                    "user_id": user2.id,
+                                    "name": user2.name,
+                                    "xp": user2.xp,
+                                    "rank": user2.rank,
+                                    "avatar": user2.avatar,
                                 }
 
                                 await ws_1.send_json(

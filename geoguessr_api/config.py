@@ -6,11 +6,6 @@ load_dotenv()
 
 class Config:
     BASE_DIR = Path(__file__).resolve().parent
-    DB_DIR = BASE_DIR / "bd"
-
-    DB_USERS = os.getenv("DB_USERS_PATH", str(DB_DIR / "bd_users.json"))
-    DB_LOBBY = os.getenv("DB_LOBBY_PATH", str(DB_DIR / "bd_lobby.json"))
-    DB_LOCATIONS = os.getenv("DB_LOCATIONS_PATH", str(DB_DIR / "locations.json"))
 
     SECRET_KEY = os.getenv("SECRET_KEY", "change-this-secret-key-in-production")
     ALGORITHM = os.getenv("ALGORITHM", "HS256")
@@ -18,7 +13,20 @@ class Config:
     CLIENT_ID = os.getenv("CLIENT_ID")
     CLIENT_SECRET = os.getenv("CLIENT_SECRET")
     REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:5173/auth/google/callback")
+    DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "postgresql+asyncpg://postgres:123@localhost:5432/MistGuess")
 
     TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+
+    RANKS = [
+    (0, "Ashborn"),
+    (100, "Fog Runner"),
+    (300, "Tin Sight"),
+    (600, "Brass Deceiver"),
+    (1000, "Steel Pusher"),
+    (1600, "Iron Puller"),
+    (2500, "Atium Shadow"),
+    (4000, "Mistborn"),
+    (6500, "Lord Mistborn"),
+]
 
 config = Config()

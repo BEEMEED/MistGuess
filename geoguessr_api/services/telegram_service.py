@@ -2,26 +2,28 @@ from utils.bd_service import DataBase
 from config import config
 import secrets
 from fastapi import HTTPException
+from repositories.location_repository import LocationRepository
+from sqlalchemy.ext.asyncio import AsyncSession
+from repositories.user_repository import UserRepository
+from repositories.lobby_repository import LobbyRepository
+from repositories.location_repository import LocationRepository
+
+
 class telegramAuth:
     def __init__(self) -> None:
-        self.user_db = DataBase(config.DB_USERS)
         self.code = {}
-    
-    def generate_code(self, login: str):
-        code =  secrets.token_urlsafe(6)
-        self.code[code] = login
-        return {"code":code,"login":login}
-    
-    def link_auth(self, code: str,telegramID: str):
+
+    def generate_code(self, user_id: int):
+        code = secrets.token_urlsafe(6)
+        self.code[code] = user_id
+        return {"code": code, "user_id": user_id}
+
+    async def link_auth(self,db: AsyncSession, code: str, telegramID: str):
         if code not in self.code:
             raise HTTPException(status_code=400, detail="Invalid code")
-        login = self.code[code]
+        user_id = self.code[code]
 
-        data = self.user_db.read()
-        if login not in data:
-            raise HTTPException(status_code=404, detail="User not found")
-        data[login]["telegram"] = telegramID
-        self.user_db.write(data)
+        await UserRepository.update(db,user_id=user_id,telegram=telegramID)
         del self.code[code]
 
-        return {"success": True, "login": login}
+        return {"success": True, "user_id": user_id}

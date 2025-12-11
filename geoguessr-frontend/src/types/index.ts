@@ -1,13 +1,14 @@
 // API Response Types
 
 export interface LoginResponse {
-  login: string;
+  user_id: number;
+  token: string;
 }
 
 export interface CreateLobbyRequest {
-  login: string;
   max_players: number;
   rounds: number;
+  timer: number;
 }
 
 export interface CreateLobbyResponse {
@@ -15,12 +16,10 @@ export interface CreateLobbyResponse {
 }
 
 export interface JoinLobbyRequest {
-  Login: string;
   InviteCode: string;
 }
 
 export interface LeaveLobbyRequest {
-  login: string;
   InviteCode: string;
 }
 
@@ -42,7 +41,7 @@ export interface Lobby {
 }
 
 export interface User {
-  login: string;
+  user_id: number;
   token: string;
   name?: string; // Display name from profile
   avatar?: string; // Avatar URL from profile
@@ -52,7 +51,7 @@ export interface User {
 }
 
 export interface PlayerInfo {
-  login: string;
+  user_id: number;
   name: string;
   avatar: string;
   xp: number;
@@ -63,7 +62,7 @@ export interface PlayerInfo {
 
 export interface WSPlayerJoinedEvent {
   type: 'player_joined';
-  player: string;
+  player: number;
   players: PlayerInfo[];
   host: string;
   max_players: number;
@@ -72,7 +71,7 @@ export interface WSPlayerJoinedEvent {
 
 export interface WSPlayerLeftEvent {
   type: 'player_left';
-  player: string;
+  player: number;
   players: PlayerInfo[];
 }
 
@@ -91,18 +90,18 @@ export interface WSRoundStartedEvent {
 
 export interface WSPlayerGuessedEvent {
   type: 'player_guessed';
-  player: string;
+  player: number;
 }
 
 export interface WSRoundEndedEvent {
   type: 'round_ended';
   round: number;
   winner: {
-    player: string;
+    player: number;
     distance: number;
   };
   results: Array<{
-    player: string;
+    player: number;
     distance: number;
     lat: number;
     lon: number;
@@ -114,21 +113,21 @@ export interface WSRoundEndedEvent {
 
 export interface WSGameEndedEvent {
   type: 'game_ended';
-  winner: string;
-  total_distances: { [player: string]: number };
+  winner: number;
+  total_distances: { [player: number]: number };
   players: PlayerInfo[];
 }
 
 export interface WSBroadcastEvent {
   type: 'broadcast';
-  player: string;
+  player: number;
   message: string;
 }
 
 export interface WSRankUpEvent {
   type: 'rank_up';
   rank_ups: Array<{
-    login: string;
+    user_id: number;
     old_rank: string;
     new_rank: string;
   }>;
@@ -136,12 +135,12 @@ export interface WSRankUpEvent {
 
 export interface WSPlayerDisconnectedEvent {
   type: 'player_disconnected';
-  player: string;
+  player: number;
 }
 
 export interface WSPlayerReconnectedEvent {
   type: 'player_reconnected';
-  player: string;
+  player: number;
 }
 
 export interface WSReconnectSuccessEvent {
@@ -234,7 +233,7 @@ export type WSClientMessage =
 // Game State Types
 
 export interface PlayerGuess {
-  player: string;
+  player: number;
   distance: number;
   lat: number;
   lon: number;
@@ -245,7 +244,7 @@ export interface RoundResult {
   targetLocation: Location;
   guesses: PlayerGuess[];
   winner: {
-    player: string;
+    player: number;
     distance: number;
   };
   nextRoundTime?: number; // Server timestamp when next round will start
@@ -253,8 +252,8 @@ export interface RoundResult {
 
 export interface GameState {
   lobbyCode: string;
-  players: PlayerInfo[];  // Changed from string[] to PlayerInfo[]
-  host: string;
+  players: PlayerInfo[];
+  host: number;
   maxPlayers: number;
   totalRounds: number;
   currentRound: number;
@@ -264,11 +263,11 @@ export interface GameState {
   playersGuessed: string[];
   roundResults: RoundResult[];
   finalResults: {
-    winner: string;
-    totalDistances: { [player: string]: number };
+    winner: number;
+    totalDistances: { [player: number]: number };
   } | null;
   rankUps: Array<{
-    login: string;
+    user_id: number;
     old_rank: string;
     new_rank: string;
   }>;
@@ -305,7 +304,7 @@ export interface AuthContextType {
 
 export interface LobbyContextType {
   gameState: GameState | null;
-  createLobby: (maxPlayers: number, rounds: number) => Promise<string>;
+  createLobby: (maxPlayers: number, rounds: number, timer: number) => Promise<string>;
   joinLobby: (inviteCode: string, isReconnect?: boolean) => Promise<void>;
   leaveLobby: () => Promise<void>;
   startGame: () => void;

@@ -31,15 +31,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check if user is already logged in
     const loadUserWithProfile = async () => {
-      const username = apiService.getUser();
+      const user_id_str = apiService.getUser();
       const token = apiService.getToken();
 
-      if (username && token) {
+      if (user_id_str && token) {
+        const user_id = parseInt(user_id_str);
         try {
           // Load profile to get name and avatar
           const profile = await apiService.getProfile();
           setUser({
-            login: username,
+            user_id,
             token,
             name: profile.name,
             avatar: profile.avatar,
@@ -60,7 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } catch (error) {
           // If profile fetch fails, just set basic user info
           console.error('Failed to load profile:', error);
-          setUser({ login: username, token });
+          setUser({ user_id, token });
         }
       }
 
@@ -73,10 +74,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string): Promise<void> => {
     try {
       const response = await apiService.login(username, password);
-      const { login: userLogin } = response;
+      const { user_id, token } = response;
 
-      apiService.saveUser(userLogin);
-      setUser({ login: userLogin, token: '' }); // Token in cookie
+      apiService.saveUser(user_id.toString());
+      apiService.setToken(token);
+      setUser({ user_id, token }); // Token in cookie
     } catch (error: any) {
       console.error('Login failed:', error);
       throw new Error(error.message || 'Login failed');
@@ -109,16 +111,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleGoogleCallback = async (code: string): Promise<void> => {
     try {
       const response = await apiService.loginWithGoogle(code);
-      const { login: username, token } = response;
+      const { user_id, token } = response;
 
-      apiService.saveUser(username);
+      apiService.saveUser(user_id.toString());
       apiService.setToken(token);
 
       // Load profile to get name and avatar
       try {
         const profile = await apiService.getProfile();
         setUser({
-          login: username,
+          user_id,
           token,
           name: profile.name,
           avatar: profile.avatar,
@@ -129,7 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         // If profile fetch fails, just set basic user info
         console.error('Failed to load profile:', error);
-        setUser({ login: username, token });
+        setUser({ user_id, token });
       }
     } catch (error: any) {
       console.error('Google callback failed:', error);

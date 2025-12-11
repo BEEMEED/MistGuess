@@ -368,9 +368,14 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
           {!user && (
             <button
               className="settings-overlay__menu-item settings-overlay__menu-item--login"
-              onClick={() => {
+              onClick={async () => {
                 onClose();
-                window.location.href = `${apiService.getBaseURL()}/auth/google`;
+                try {
+                  const authUrl = await apiService.getGoogleAuthUrl();
+                  window.location.href = authUrl;
+                } catch (error) {
+                  console.error('Failed to get Google auth URL:', error);
+                }
               }}
             >
               <span className="settings-overlay__menu-icon">🔑</span>

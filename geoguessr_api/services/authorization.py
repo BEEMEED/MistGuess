@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from jose import jwt
 from passlib.context import CryptContext
 from passlib.hash import bcrypt
-from utils.bd_service import DataBase
 from config import config
 from fastapi import Depends, HTTPException, APIRouter, Body, Response, Request
 from fastapi.responses import RedirectResponse
@@ -13,6 +12,12 @@ import urllib.parse
 import requests
 from dotenv import load_dotenv
 import logging
+from repositories.location_repository import LocationRepository
+from sqlalchemy.ext.asyncio import AsyncSession
+from repositories.user_repository import UserRepository
+from repositories.lobby_repository import LobbyRepository
+from repositories.location_repository import LocationRepository
+
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -35,31 +40,31 @@ class TokenManager:
 
 
 class AuthService:
-    def __init__(self) -> None:
-        self.db = DataBase(config.DB_USERS)
 
-    async def verifyToken(self, token: str):
+    @staticmethod
+    async def verifyToken(db: AsyncSession, token: str):
         try:
             data_token = TokenManager.decode_token(token)
-            login = data_token.get("login")
+            id = data_token.get("id")
 
-            if not login:
-                logger.error("Invalid token: no login")
+            if not id:
+                logger.error("Invalid token: no username")
                 raise HTTPException(401, "invalid token")
 
-            data = self.db.read()
-            if login not in data:
-                logger.error(f"User {login} not found")
+            user = await UserRepository.get_by_id(db, id)
+
+            if not user:
                 raise HTTPException(401, "user not found")
 
-            return {"login": login}
+            return {"user_id": id, "username": user.username, "role": user.role}
         except HTTPException:
             raise
         except Exception as e:
             logger.error(f"Token verification error: {str(e)}")
             raise HTTPException(401, "invalid token")
 
-    def LoginGoogle_service(self, code: str):
+    @staticmethod
+    async def LoginGoogle_service(db: AsyncSession, code: str):
         try:
             token_url = "https://oauth2.googleapis.com/token"
             data = {
@@ -67,7 +72,7 @@ class AuthService:
                 "client_id": config.CLIENT_ID,
                 "client_secret": config.CLIENT_SECRET,
                 "redirect_uri": config.REDIRECT_URI,
-                "grant_type": "authorization_code"
+                "grant_type": "authorization_code",
             }
             response = requests.post(token_url, data=data)
             tokens = response.json()
@@ -80,23 +85,26 @@ class AuthService:
             email = user_data["email"]
             name = user_data["name"]
 
-            data_db = self.db.read()
-            if google_id in data_db:
-                logger.info(f"Google login success for existing user {google_id}")
-                token = TokenManager.create_token({"login": google_id})
-                return {"token": token, "login": google_id}
+            user = await UserRepository.get_by_google_id(db, google_id)
 
-            data_db[google_id] = {"name": name, "google_id": google_id, "avatar": '', "xp": 0, "rank": "Ashborn", "role": "user","telegram": "null"}
-            self.db.write(data_db)
-            token = TokenManager.create_token({"login": google_id})
+            if user:
+                logger.info(f"Google login success for existing user {user.id}")
+                token = TokenManager.create_token({"id": user.id})
+                return {"token": token, "user_id": user.id}
+
+            username = email.split("@")[0]
+            user = await UserRepository.create(db=db,google_id=google_id,username=username)
+            await UserRepository.update(db, user.id, name=name)
+            token = TokenManager.create_token({"id": user.id})
             logger.info(f"Google login success for new user {google_id}")
-            return {"token": token, "login": google_id}
+            return {"token": token, "user_id": user.id}
 
         except Exception as e:
             logger.error(f"Google login fail: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Google loging fail: {str(e)}")
-    
-    def GoogleAuth(self):
+
+    @staticmethod
+    async def GoogleAuth():
         baseURL = "https://accounts.google.com/o/oauth2/v2/auth"
         query = {
             "client_id": config.CLIENT_ID,
@@ -107,54 +115,4 @@ class AuthService:
         }
         query_string = urllib.parse.urlencode(query, quote_via=urllib.parse.quote)
         auth_url = f"{baseURL}?{query_string}"
-        return RedirectResponse(url=auth_url, status_code=302)
-
-
-
-    # --- for tests ---
-
-    def register(self, login: str, password: str):
-        data = self.db.read()
-
-        if login in data:
-            logger.warning(f"Registration attempt for existing user: {login}")
-            raise HTTPException(status_code=400, detail="User already exists")
-
-        hashed_password = pwd_context.hash(password)
-
-        data[login] = {
-            "name": login,
-            "password": hashed_password,
-            "avatar": "",
-            "xp": 0,
-            "rank": "Ashborn",
-            "role": "user",
-            "telegram": 'null'
-        }
-
-        self.db.write(data)
-        logger.info(f"User registered: {login}")
-        return {"login": login}
-
-    def login(self, login: str, password: str):
-        data = self.db.read()
-
-        if login not in data:
-            logger.warning(f"Login attempt for non-existent user: {login}")
-            raise HTTPException(status_code=404, detail="User not found")
-
-        user = data[login]
-
-        if "password" not in user:
-            logger.warning(f"Login attempt with password for Google user: {login}")
-            raise HTTPException(status_code=400, detail="User registered via Google")
-
-        if not pwd_context.verify(password, user["password"]):
-            logger.warning(f"Failed login attempt for user: {login}")
-            raise HTTPException(status_code=401, detail="Incorrect password")
-
-        logger.info(f"User logged in: {login}")
-        token = TokenManager.create_token({"login": login})
-        return {"token": token, "login": login}
-
-
+        return {"auth_url": auth_url}

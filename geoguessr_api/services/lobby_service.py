@@ -3,9 +3,12 @@ from config import config
 from fastapi import HTTPException, APIRouter, Body, Depends
 from services.authorization import AuthService
 from utils.LocationService import LocationService
-import secrets
 import logging
-
+from repositories.location_repository import LocationRepository
+from sqlalchemy.ext.asyncio import AsyncSession
+from repositories.user_repository import UserRepository
+from repositories.lobby_repository import LobbyRepository
+from repositories.location_repository import LocationRepository
 
 logger = logging.getLogger(__name__)
 
@@ -13,53 +16,28 @@ loc = LocationService()
 
 
 class LobbyService:
-    def __init__(self) -> None:
-        self.bd = DataBase(config.DB_LOBBY)
 
-    def create_lobby(self, login: str, max_players: int, rounds: int, timer: int) -> dict:
-        data = self.bd.read()
-        InviteCode = secrets.token_urlsafe(6)
-        data[InviteCode] = {
-            "host": login,
-            "max_players": max_players,
-            "users": [login],
-            "InviteCode": InviteCode,
-            "RoundsNum": rounds,
-            "locations": loc.GetRandomLocation(rounds),
-            "timer": timer
-        }
-        self.bd.write(data)
-        logging.info(f"User {login} created lobby {InviteCode}")
-        return {"InviteCode": InviteCode}
+    @staticmethod
+    async def create_lobby(db: AsyncSession, user_id: int, max_players: int, rounds: int, timer: int) -> dict:
+        lobby = await LobbyRepository.create(db=db,host_id=user_id,max_players=max_players,rounds_num=rounds,timer=timer)
+        logging.info(f"User {user_id} created lobby {lobby.invite_code}")
+        return {"InviteCode": lobby.invite_code}
         
-
-    def lobby_join(self, InviteCode: str, login: str):
-        data = self.bd.read()
+    @staticmethod
+    async def lobby_join(db: AsyncSession, InviteCode: str, user_id: int):
+        await LobbyRepository.add_user(db,InviteCode,user_id)
         
-        if len(data[InviteCode]["users"]) >= data[InviteCode]["max_players"]:
-            raise HTTPException(status_code=409, detail="LOBBY_FULL")
-
-        data[InviteCode]["users"].append(login)
-        self.bd.write(data)
-
-        logging.info(f"User {login} joined lobby {InviteCode}")
+        logging.info(f"User {user_id} joined lobby {InviteCode}")
         return {"message": "Successfully joined lobby"}
     
         
+    @staticmethod
+    async def lobby_leave(db: AsyncSession, InviteCode: str, user_id: int):
 
-    def lobby_leave(self, InviteCode: str, login: str):
-        data = self.bd.read()
+        await LobbyRepository.remove_user(db,user_id,InviteCode)
 
-        if login not in data[InviteCode]["users"]:
-            raise HTTPException(status_code=409, detail="ALREADY_LEAVE_LOBBY")
-        
-        data[InviteCode]["users"].remove(login)
-        self.bd.write(data)
-
-        logging.info(f"User {login} left lobby {InviteCode}")
+        logging.info(f"User {user_id} left lobby {InviteCode}")
         return {"message": "Successfully left lobby"}
-
-        
 
 
 

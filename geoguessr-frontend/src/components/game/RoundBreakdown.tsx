@@ -23,10 +23,10 @@ export const RoundBreakdown: React.FC<RoundBreakdownProps> = ({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
 
-  const getPlayerInfo = (login: string) => {
-    const player = players.find((p) => p.login === login);
+  const getPlayerInfo = (user_id: number) => {
+    const player = players.find((p) => p.user_id === user_id);
     return {
-      name: player?.name || login,
+      name: player?.name || `User${user_id}`,
       avatar: player?.avatar || '',
     };
   };

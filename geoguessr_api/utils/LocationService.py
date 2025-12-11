@@ -1,35 +1,15 @@
 from .bd_service import DataBase
 from config import config
-
+from repositories.location_repository import LocationRepository
+from sqlalchemy.ext.asyncio import AsyncSession
+from repositories.user_repository import UserRepository
+from repositories.lobby_repository import LobbyRepository
+from repositories.location_repository import LocationRepository
 import math
 import random
 
 
 class LocationService:
-    def __init__(self) -> None:
-        self.bd = DataBase(config.DB_LOCATIONS)
-
-    def GetRandomLocation(self, NumRounds: int):
-        data = self.bd.read()
-        locations_list = list(data.values())
-
-        if NumRounds > len(locations_list):
-            NumRounds = len(locations_list)
-
-        if NumRounds <= 0 or len(locations_list) == 0:
-            return {}
-
-        selected_locations = random.sample(locations_list, NumRounds)
-        result = {}
-        for round_num, location in enumerate(selected_locations, start=1):
-            lat = location["lat"]
-            lon = location["lon"]
-
-            url = f"https://www.google.com/maps/@{lat},{lon},17z"
-
-            result[round_num] = {"lat": lat, "lon": lon, "url": url}
-        return result
-
     @staticmethod
     def haversine_m(lat1, lon1, lat2, lon2):
         phi1, phi2 = math.radians(lat1), math.radians(lat2)
@@ -41,3 +21,9 @@ class LocationService:
         )
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         return 6371000 * c
+
+    @staticmethod
+    def generate_street_view_url(lat: float, lon: float):
+        return (
+            f"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={lat},{lon}"
+        )

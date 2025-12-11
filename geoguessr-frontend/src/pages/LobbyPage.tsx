@@ -72,7 +72,7 @@ export const LobbyPage: React.FC = () => {
         playersLength: gameState.players.length,
         isGameStarted: gameState.isGameStarted,
         host: gameState.host,
-        userLogin: user?.login,
+        userId: user?.user_id,
       });
     }
 
@@ -97,12 +97,12 @@ export const LobbyPage: React.FC = () => {
     if (cond1 && cond2 && cond3 && cond4 && cond5 && cond6) {
       console.log('🟢 ALL CONDITIONS MET! Checking host...');
       // Only host should start the game
-      const isHost = user?.login === gameState.host;
+      const isHost = user?.user_id === gameState.host;
       console.log('Host check:', {
-        userLogin: user?.login,
+        userId: user?.user_id,
         gameStateHost: gameState.host,
         isHost,
-        typeofUserLogin: typeof user?.login,
+        typeofUserId: typeof user?.user_id,
         typeofHost: typeof gameState.host,
       });
 
@@ -118,7 +118,7 @@ export const LobbyPage: React.FC = () => {
         console.log('❌ Not host, waiting for host to start');
       }
     }
-  }, [searchParams, gameState, code, user?.login, startGame]);
+  }, [searchParams, gameState, code, user?.user_id, startGame]);
 
   const handleCopyCode = () => {
     if (code) {
@@ -163,7 +163,7 @@ export const LobbyPage: React.FC = () => {
     );
   }
 
-  const isHost = gameState.host === user.login;
+  const isHost = gameState.host === user.user_id;
 
   // Show loading screen for BOTH players if coming from matchmaking
   const isFromMatchmaking = searchParams.get('autostart') === 'true';
@@ -221,7 +221,7 @@ export const LobbyPage: React.FC = () => {
             <div className="players-list">
               {gameState.players.map((player, index) => (
                 <div
-                  key={player.login}
+                  key={player.user_id}
                   className="player-item fade-in"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
@@ -230,8 +230,8 @@ export const LobbyPage: React.FC = () => {
                     <div className="player-name">{player.name}</div>
                     {player.rank && <RankBadge rank={player.rank} size="small" />}
                   </div>
-                  {player.login === gameState.host && <div className="host-badge">Host</div>}
-                  {player.login === user.login && <div className="you-badge">You</div>}
+                  {player.user_id === gameState.host && <div className="host-badge">Host</div>}
+                  {player.user_id === user.user_id && <div className="you-badge">You</div>}
                 </div>
               ))}
             </div>

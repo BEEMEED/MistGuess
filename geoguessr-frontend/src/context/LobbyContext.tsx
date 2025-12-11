@@ -79,7 +79,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
           };
 
           // Host automatically starts first round
-          if (user?.login === prev.host) {
+          if (user?.user_id === prev.host) {
             setTimeout(() => wsService.startRound(), 500);
           }
 
@@ -115,7 +115,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
           prev
             ? {
                 ...prev,
-                playersGuessed: [...prev.playersGuessed, event.player],
+                playersGuessed: [...prev.playersGuessed, event.player.toString()],
               }
             : null
         );
@@ -174,14 +174,18 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
         break;
 
       case 'broadcast':
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            player: event.player,
-            message: event.message,
-            timestamp: Date.now(),
-          },
-        ]);
+        setGameState((prevState) => {
+          const playerName = prevState?.players.find((p) => p.user_id === event.player)?.name || `User${event.player}`;
+          setChatMessages((prev) => [
+            ...prev,
+            {
+              player: playerName,
+              message: event.message,
+              timestamp: Date.now(),
+            },
+          ]);
+          return prevState;
+        });
         break;
 
       case 'rank_up':
@@ -191,7 +195,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
           if (!prev) return prev;
 
           const updatedPlayers = prev.players.map((player) => {
-            const rankUp = event.rank_ups.find((ru) => ru.login === player.login);
+            const rankUp = event.rank_ups.find((ru) => ru.user_id === player.user_id);
             if (rankUp) {
               return { ...player, rank: rankUp.new_rank };
             }
@@ -221,30 +225,38 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
 
       case 'player_disconnected':
         console.log('Player disconnected:', event.player);
-        setDisconnectedPlayers((prev) => new Set(prev).add(event.player));
-        setPlayerStatusNotification({
-          message: `${event.player} disconnected. Waiting for reconnection...`,
-          show: true,
+        setGameState((prevState) => {
+          const playerName = prevState?.players.find((p) => p.user_id === event.player)?.name || `User${event.player}`;
+          setDisconnectedPlayers((prev) => new Set(prev).add(event.player.toString()));
+          setPlayerStatusNotification({
+            message: `${playerName} disconnected. Waiting for reconnection...`,
+            show: true,
+          });
+          setTimeout(() => {
+            setPlayerStatusNotification({ message: '', show: false });
+          }, 5000);
+          return prevState;
         });
-        setTimeout(() => {
-          setPlayerStatusNotification({ message: '', show: false });
-        }, 5000);
         break;
 
       case 'player_reconnected':
         console.log('Player reconnected:', event.player);
-        setDisconnectedPlayers((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(event.player);
-          return newSet;
+        setGameState((prevState) => {
+          const playerName = prevState?.players.find((p) => p.user_id === event.player)?.name || `User${event.player}`;
+          setDisconnectedPlayers((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(event.player.toString());
+            return newSet;
+          });
+          setPlayerStatusNotification({
+            message: `${playerName} reconnected!`,
+            show: true,
+          });
+          setTimeout(() => {
+            setPlayerStatusNotification({ message: '', show: false });
+          }, 3000);
+          return prevState;
         });
-        setPlayerStatusNotification({
-          message: `${event.player} reconnected!`,
-          show: true,
-        });
-        setTimeout(() => {
-          setPlayerStatusNotification({ message: '', show: false });
-        }, 3000);
         break;
 
       case 'reconnect_succes':
@@ -307,7 +319,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
 
     try {
       setError(null);
-      const response = await apiService.createLobby(user.login, maxPlayers, rounds, timer);
+      const response = await apiService.createLobby(maxPlayers, rounds, timer);
       const inviteCode = response.InviteCode;
 
       // Connect to WebSocket
@@ -318,11 +330,13 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
       setGameState({
         lobbyCode: inviteCode,
         players: [{
-          login: user.login,
-          name: user.name || user.login,
-          avatar: user.avatar || ''
+          user_id: user.user_id,
+          name: user.name || `User${user.user_id}`,
+          avatar: user.avatar || '',
+          xp: user.xp || 0,
+          rank: user.rank || 'Ashborn'
         }],
-        host: user.login,
+        host: user.user_id,
         maxPlayers,
         totalRounds: rounds,
         currentRound: 0,
@@ -355,7 +369,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
       // Skip API join if reconnecting
       if (!isReconnect) {
         try {
-          await apiService.joinLobby(user.login, inviteCode);
+          await apiService.joinLobby(inviteCode);
         } catch (apiErr: any) {
           // If already in lobby (409 Conflict), that's fine - continue to connect WebSocket
           const errMsg = apiErr.message || '';
@@ -381,9 +395,11 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
       setGameState({
         lobbyCode: inviteCode,
         players: [{
-          login: user.login,
-          name: user.name || user.login,
-          avatar: user.avatar || ''
+          user_id: user.user_id,
+          name: user.name || `User${user.user_id}`,
+          avatar: user.avatar || '',
+          xp: user.xp || 0,
+          rank: user.rank || 'Ashborn'
         }],
         host: '', // Will be determined from WS events
         maxPlayers: 0, // Unknown initially
@@ -419,7 +435,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
         return;
       }
 
-      await apiService.leaveLobby(user.login, gameState.lobbyCode);
+      await apiService.leaveLobby(gameState.lobbyCode);
       wsService.disconnect();
       setIsConnected(false);
       setGameState(null);
@@ -446,7 +462,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
   };
 
   const startGame = (): void => {
-    if (!gameState || gameState.host !== user?.login) {
+    if (!gameState || gameState.host !== user?.user_id) {
       setError('Only the host can start the game');
       return;
     }
@@ -462,7 +478,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
   };
 
   const startNextRound = (): void => {
-    if (!gameState || gameState.host !== user?.login) {
+    if (!gameState || gameState.host !== user?.user_id) {
       setError('Only the host can start the next round');
       return;
     }
@@ -470,7 +486,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
   };
 
   const endRound = useCallback((): void => {
-    if (!gameState || gameState.host !== user?.login) {
+    if (!gameState || gameState.host !== user?.user_id) {
       setError('Only the host can end the round');
       return;
     }
@@ -479,7 +495,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
   }, [gameState, user]);
 
   const endGame = (): void => {
-    if (!gameState || gameState.host !== user?.login) {
+    if (!gameState || gameState.host !== user?.user_id) {
       setError('Only the host can end the game');
       return;
     }

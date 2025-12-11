@@ -133,7 +133,7 @@ export const GamePage: React.FC = () => {
     const latestPlayer = gameState.playersGuessed[gameState.playersGuessed.length - 1];
 
     // Don't show notification for current user's own guess
-    if (latestPlayer && latestPlayer !== user.login) {
+    if (latestPlayer && latestPlayer !== user.user_id.toString()) {
       const newToast: ToastNotification = {
         id: Date.now(),
         message: `${latestPlayer} made their guess!`,
@@ -174,7 +174,7 @@ export const GamePage: React.FC = () => {
     );
   }
 
-  const isHost = gameState.host === user.login;
+  const isHost = gameState.host === user.user_id;
   const allPlayersGuessed =
     gameState.playersGuessed.length === gameState.players.length;
 
@@ -269,9 +269,9 @@ export const GamePage: React.FC = () => {
       <div className="players-overlay">
         {gameState.players.map((player) => (
           <div
-            key={player.login}
+            key={player.user_id}
             className={`player-status ${
-              gameState.playersGuessed.includes(player.login) ? 'guessed' : ''
+              gameState.playersGuessed.includes(player.user_id.toString()) ? 'guessed' : ''
             }`}
             title={player.name}
           >
@@ -367,7 +367,7 @@ export const GamePage: React.FC = () => {
       <ChatBox
         messages={chatMessages}
         onSendMessage={sendMessage}
-        currentUser={user.login}
+        currentUser={user.user_id.toString()}
       />
     </div>
   );
