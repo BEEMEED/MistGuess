@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_origins=["https://mistguess.netlify.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -51,6 +51,16 @@ async def startup_event():
     asyncio.create_task(mathmaking_instance.mathmaging_loop())
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "GeoGuessr API is running"}
+
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

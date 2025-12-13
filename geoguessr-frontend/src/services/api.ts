@@ -7,7 +7,7 @@ import type {
 } from '../types';
 import { toastManager } from './toastManager';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 class APIService {
   private client: AxiosInstance;
