@@ -141,7 +141,7 @@ export const RoundResults: React.FC<RoundResultsProps> = ({ result, onContinue, 
 
   // Animation stages timing (total 5s to match backend)
   useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+    const timers: number[] = [];
 
     // Stage 0 -> 1: Show points for 2s, then start attack
     timers.push(setTimeout(() => setAnimationStage(1), 2000));
@@ -171,8 +171,8 @@ export const RoundResults: React.FC<RoundResultsProps> = ({ result, onContinue, 
     return () => clearInterval(timer);
   }, [onContinue, animationStage]);
 
-  const winnerGuess = result.guesses.find(g => g.player === result.winner);
-  const loserGuess = result.guesses.find(g => g.player !== result.winner);
+  const winnerGuess = result.guesses.find(g => g.player === result.winner.player);
+  const loserGuess = result.guesses.find(g => g.player !== result.winner.player);
 
   // Animation stages 0-2: Show damage animation
   if (animationStage < 3) {
@@ -184,7 +184,7 @@ export const RoundResults: React.FC<RoundResultsProps> = ({ result, onContinue, 
             <div className="player-points winner-points">
               <div className="points-avatar">👑</div>
               <div className="points-info">
-                <div className="points-name">{getPlayerName(result.winner)}</div>
+                <div className="points-name">{getPlayerName(result.winner.player)}</div>
                 <div className="points-value">{winnerGuess?.points.toLocaleString() || 0}</div>
                 <div className="points-label">points</div>
               </div>
@@ -246,8 +246,8 @@ export const RoundResults: React.FC<RoundResultsProps> = ({ result, onContinue, 
             <div className="results-items">
               {result.guesses
                 .sort((a, b) => b.points - a.points)
-                .map((guess, index) => {
-                  const isWinner = guess.player === result.winner;
+                .map((guess) => {
+                  const isWinner = guess.player === result.winner.player;
                   return (
                     <div
                       key={guess.player}
@@ -274,7 +274,7 @@ export const RoundResults: React.FC<RoundResultsProps> = ({ result, onContinue, 
             <div className="round-winner">
               <div className="winner-icon">⚔️</div>
               <div className="winner-text">
-                <strong>{getPlayerName(result.winner)}</strong> wins this round!
+                <strong>{getPlayerName(result.winner.player)}</strong> wins this round!
               </div>
             </div>
           </div>

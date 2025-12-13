@@ -8,7 +8,7 @@ import { FogOverlay } from '../components/effects/FogOverlay';
 import '../styles/MatchmakingPage.css';
 
 export const MatchmakingPage: React.FC = () => {
-  const { state, joinQueue, leaveQueue, isConnected, resetRedirectFlag } = useMatchmaking();
+  const { state, joinQueue, leaveQueue, resetRedirectFlag } = useMatchmaking();
   const navigate = useNavigate();
 
   // Reset redirect flag when component mounts

@@ -122,14 +122,21 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
         setGameState((prev) => {
           if (!prev) return prev;
 
+          // Find winner's data in results
+          const winnerData = event.results.find(r => r.player === event.winner);
+
           const roundResult: RoundResult = {
+            round: (prev.currentRound || prev.roundResults.length + 1),
             targetLocation: {
               lat: event.lat,
               lon: event.lon,
               url: prev.currentLocation?.url || '',
             },
             guesses: event.results,
-            winner: event.winner,
+            winner: {
+              player: event.winner,
+              distance: winnerData?.distance || 0,
+            },
             damage: event.damage,
             hp: event.hp,
           };
@@ -140,6 +147,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
             hp: event.hp,
             roundResults: [...prev.roundResults, roundResult],
             playersGuessed: [],
+            currentRound: (prev.currentRound || 0) + 1,
           };
           console.log('New state after round_ended:', newState);
           return newState;

@@ -240,9 +240,13 @@ export interface PlayerGuess {
 }
 
 export interface RoundResult {
+  round: number;
   targetLocation: Location;
   guesses: Array<PlayerGuess & { points: number }>;
-  winner: number;
+  winner: {
+    player: number;
+    distance: number;
+  };
   damage: number;
   hp: { [player_id: number]: number };
 }
@@ -251,6 +255,9 @@ export interface GameState {
   lobbyCode: string;
   players: PlayerInfo[];
   host: number;
+  maxPlayers?: number;
+  totalRounds?: number;
+  currentRound?: number;
   hp: { [player_id: number]: number };
   currentLocationIndex: number;
   isGameStarted: boolean;

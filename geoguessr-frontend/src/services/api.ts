@@ -2,10 +2,7 @@ import axios from 'axios';
 import type { AxiosInstance, AxiosError } from 'axios';
 import type {
   LoginResponse,
-  CreateLobbyRequest,
   CreateLobbyResponse,
-  JoinLobbyRequest,
-  LeaveLobbyRequest,
   APIError,
 } from '../types';
 import { toastManager } from './toastManager';
