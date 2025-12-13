@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from services.authorization import AuthService
-from utils.bd_service import DataBase
+
 from config import config
 import logging
 import json
@@ -22,6 +22,9 @@ class Admin_Panel:
         db: AsyncSession, admin_login: str, lat: float, lon: float, region: str
     ):
         location = await LocationRepository.add_location(db, lat, lon, region)
+        if not location:
+            raise HTTPException(status_code=400, detail="Failed to add location")
+        return {"location_id": location.id}
 
     @staticmethod
     async def Get_Panel_Admin(db: AsyncSession, limit: int, page: int):

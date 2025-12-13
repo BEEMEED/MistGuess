@@ -9,9 +9,7 @@ class Lobby(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     invite_code: Mapped[str] = mapped_column(unique=True, nullable=False)
     host_id: Mapped[int] = mapped_column( nullable=False)
-    max_players: Mapped[int] = mapped_column(nullable=False)
-    rounds_num: Mapped[int] = mapped_column(nullable=False)
-    timer: Mapped[int] = mapped_column(nullable=False,default=30)
+    timer: Mapped[int] = mapped_column(nullable=False,default=240)
     users: Mapped[list] = mapped_column(ARRAY(Integer), default=[])
     locations: Mapped[list] = mapped_column(JSONB, nullable=False)
 

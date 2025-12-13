@@ -1,4 +1,4 @@
-from utils.bd_service import DataBase
+
 from config import config
 from fastapi import HTTPException, APIRouter, Body, Depends
 from services.authorization import AuthService
@@ -18,8 +18,8 @@ loc = LocationService()
 class LobbyService:
 
     @staticmethod
-    async def create_lobby(db: AsyncSession, user_id: int, max_players: int, rounds: int, timer: int) -> dict:
-        lobby = await LobbyRepository.create(db=db,host_id=user_id,max_players=max_players,rounds_num=rounds,timer=timer)
+    async def create_lobby(db: AsyncSession, user_id: int) -> dict:
+        lobby = await LobbyRepository.create(db=db,host_id=user_id)
         logging.info(f"User {user_id} created lobby {lobby.invite_code}")
         return {"InviteCode": lobby.invite_code}
         

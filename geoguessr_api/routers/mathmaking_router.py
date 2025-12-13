@@ -2,7 +2,6 @@ from services.mathmaking_service import mathmaking_instance
 from config import config
 from fastapi import APIRouter, WebSocket, Depends, HTTPException, WebSocketDisconnect
 from services.authorization import AuthService
-from utils.bd_service import DataBase
 import logging
 from database.database import get_db
 from repositories.user_repository import UserRepository

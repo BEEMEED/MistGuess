@@ -33,9 +33,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
   const [showJoinLobby, setShowJoinLobby] = useState(false);
   const [showCreateLobby, setShowCreateLobby] = useState(false);
   const [joinCode, setJoinCode] = useState('');
-  const [maxPlayers, setMaxPlayers] = useState(4);
-  const [totalRounds, setTotalRounds] = useState(5);
-  const [timerMinutes, setTimerMinutes] = useState(2); // Timer in minutes
 
   React.useEffect(() => {
     const checkTelegram = async () => {
@@ -78,8 +75,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
   const handleCreateLobby = async () => {
     try {
       setCreatingLobby(true);
-      const timerSeconds = timerMinutes * 60; // Convert minutes to seconds
-      const code = await createLobby(maxPlayers, totalRounds, timerSeconds);
+      const code = await createLobby();
       onClose();
       navigate(`/lobby/${code}`);
     } catch (err) {
@@ -141,42 +137,22 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               </>
             ) : showCreateLobby ? (
               <>
-                <div className="settings-overlay__form">
-                  <label style={{ color: 'rgba(212, 165, 116, 0.95)', marginBottom: '0.5rem', display: 'block', textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)' }}>
-                    Max Players: {maxPlayers}
-                  </label>
-                  <input
-                    type="range"
-                    min="2"
-                    max="8"
-                    value={maxPlayers}
-                    onChange={(e) => setMaxPlayers(parseInt(e.target.value))}
-                    style={{ width: '100%', marginBottom: '1rem' }}
-                  />
-
-                  <label style={{ color: 'rgba(212, 165, 116, 0.95)', marginBottom: '0.5rem', display: 'block', textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)' }}>
-                    Total Rounds: {totalRounds}
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={totalRounds}
-                    onChange={(e) => setTotalRounds(parseInt(e.target.value))}
-                    style={{ width: '100%', marginBottom: '1rem' }}
-                  />
-
-                  <label style={{ color: 'rgba(212, 165, 116, 0.95)', marginBottom: '0.5rem', display: 'block', textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)' }}>
-                    Timer: {timerMinutes} {timerMinutes === 1 ? 'minute' : 'minutes'}
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={timerMinutes}
-                    onChange={(e) => setTimerMinutes(parseInt(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
+                <div className="settings-overlay__form" style={{ padding: '1rem', textAlign: 'center' }}>
+                  <p style={{ color: 'rgba(212, 165, 116, 0.95)', marginBottom: '1rem', textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)' }}>
+                    Create a 1v1 HP Duel
+                  </p>
+                  <p style={{ color: 'rgba(170, 170, 170, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                    • 2 Players
+                  </p>
+                  <p style={{ color: 'rgba(170, 170, 170, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                    • 6000 HP each
+                  </p>
+                  <p style={{ color: 'rgba(170, 170, 170, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                    • 4 minute timer
+                  </p>
+                  <p style={{ color: 'rgba(170, 170, 170, 0.7)', fontSize: '0.9rem' }}>
+                    • Battle until HP reaches 0
+                  </p>
                 </div>
 
                 <button
@@ -185,7 +161,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                   disabled={creatingLobby}
                 >
                   <span className="settings-overlay__menu-icon">✓</span>
-                  <span>{creatingLobby ? 'Creating...' : 'Create'}</span>
+                  <span>{creatingLobby ? 'Creating...' : 'Create Lobby'}</span>
                 </button>
 
                 <button

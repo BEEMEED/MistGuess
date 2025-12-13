@@ -7,14 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from repositories.user_repository import UserRepository
 from repositories.lobby_repository import LobbyRepository
 from repositories.location_repository import LocationRepository
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 
 class mathmaking_service:
     def __init__(self) -> None:
         self.queue = []
-        
 
     async def join_queue(self, login, ws, xp):
         self.queue = [(l, w, x) for l, w, x in self.queue if l != login]
@@ -43,17 +42,22 @@ class mathmaking_service:
 
                             try:
                                 from database.database import asyncsession
+
                                 async with asyncsession() as db:
-                                    lobby = await LobbyRepository.create(db=db,host_id=login_1,max_players=2,rounds_num=5,timer=30)
+                                    lobby = await LobbyRepository.create(
+                                        db=db, host_id=login_1
+                                    )
                                     invite_code = lobby.invite_code
 
-                                    await LobbyRepository.add_user(db, invite_code, login_2)
+                                    await LobbyRepository.add_user(
+                                        db, invite_code, login_2
+                                    )
 
-                                    user1 = await UserRepository.get_by_id(db,login_1)
-                                    user2 = await UserRepository.get_by_id(db,login_2)
+                                    user1 = await UserRepository.get_by_id(db, login_1)
+                                    user2 = await UserRepository.get_by_id(db, login_2)
                                     assert user1
                                     assert user2
-                
+
                                 opponent1_info = {
                                     "user_id": user1.id,
                                     "name": user1.name,
@@ -74,7 +78,6 @@ class mathmaking_service:
                                         "type": "match_found",
                                         "LobbyCode": invite_code,
                                         "opponent": oppenent2_info,
-                                        
                                     }
                                 )
                                 await ws_2.send_json(
@@ -82,7 +85,6 @@ class mathmaking_service:
                                         "type": "match_found",
                                         "LobbyCode": invite_code,
                                         "opponent": opponent1_info,
-                                        
                                     }
                                 )
                                 await asyncio.sleep(2)
@@ -103,6 +105,9 @@ class mathmaking_service:
 
     async def leave_queue(self, login, ws, xp):
         self.queue = [(l, w, x) for l, w, x in self.queue if l != login]
-        logger.info(f"User {login} left matchmaking queue. matchmaking queue size: {len(self.queue)}")
+        logger.info(
+            f"User {login} left matchmaking queue. matchmaking queue size: {len(self.queue)}"
+        )
+
 
 mathmaking_instance = mathmaking_service()

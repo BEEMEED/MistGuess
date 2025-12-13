@@ -1,186 +1,52 @@
 import pytest
+from repositories.user_repository import UserRepository
+from services.authorization import TokenManager
 
+
+
+@pytest.fixture
+async def test_user(db_session):
+    user = await UserRepository.create(db_session,google_id="12333",username="test")
+    await db_session.commit()
+    token = TokenManager.create_token({"id": user.id})
+    return {"user": user, "token": token}
+
+@pytest.fixture
+async def created_lobby(client,test_user):
+    client.cookies.set("access_token", test_user["token"])
+    response = await client.post("/lobbies",json={})
+    return response.json()["invite_code"]
 
 @pytest.mark.asyncio
-async def test_create_lobby(client):
-    reg_response = await client.post('/auth/register', json={
-        "login": "lobbyuser",
-        "password": "pass123"
-    })
-    assert reg_response.status_code == 200
-
-    login_response = await client.post('/auth/login', json={
-        "login": "lobbyuser",
-        "password": "pass123"
-    })
-    assert login_response.status_code == 200
-
-    token = login_response.json()["access_token"]
-
-    response = await client.post('/lobbies/create', json={
-        "max_players": 4,
-        "rounds": 3},
-        headers={"Authorization": f"Bearer {token}"})
+async def test_create_lobby(client,test_user):
+    client.cookies.set("access_token", test_user["token"])
+    response = await client.post("/lobbies",json={})
     assert response.status_code == 200
-    assert "InviteCode" in response.json()
-
-
-@pytest.mark.asyncio
-async def test_create_lobby_unauthorized(client):
-    response = await client.post('/lobbies/create', json={
-        "max_players": 4,
-        "rounds": 3
-    })
-    assert response.status_code == 401
-
+    assert "invite_code" in response.json()
 
 @pytest.mark.asyncio
-async def test_create_lobby_invalid_players(client):
-    reg_response = await client.post('/auth/register', json={
-        "login": "user4",
-        "password": "pass123"
-    })
-    assert reg_response.status_code == 200
+async def test_join_lobby(client,db_session,created_lobby):
+    user2 = await UserRepository.create(db_session,google_id="12334",username="test2")
+    await db_session.commit()
+    token2 = TokenManager.create_token({"id": user2.id})
 
-    login_response = await client.post('/auth/login', json={
-        "login": "user4",
-        "password": "pass123"
-    })
-    assert login_response.status_code == 200
-
-    token = login_response.json()["access_token"]
-
-    response = await client.post('/lobbies/create', json={
-        "max_players": 1,
-        "rounds": 3},
-        headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code in [400, 422]
-
-
-@pytest.mark.asyncio
-async def test_create_lobby_invalid_rounds(client):
-    reg_response = await client.post('/auth/register', json={
-        "login": "user5",
-        "password": "pass123"
-    })
-    assert reg_response.status_code == 200
-
-    login_response = await client.post('/auth/login', json={
-        "login": "user5",
-        "password": "pass123"
-    })
-    assert login_response.status_code == 200
-
-    token = login_response.json()["access_token"]
-    response = await client.post('/lobbies/create', json={
-        "max_players": 4,
-        "rounds": 0},
-        headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code in [400, 422]
-
-
-@pytest.mark.asyncio
-async def test_join_lobby(client):
-    reg_response = await client.post('/auth/register', json={
-        "login": "host",
-        "password": "pass123"
-    })
-    assert reg_response.status_code == 200
-
-    login_response = await client.post('/auth/login', json={
-        "login": "host",
-        "password": "pass123"
-    })
-    assert login_response.status_code == 200
-    token1 = login_response.json()["access_token"]
-
-    create_response = await client.post('/lobbies/create', json={
-        "max_players": 4,
-        "rounds": 3
-    }, headers={"Authorization": f"Bearer {token1}"})
-
-    invite_code = create_response.json()["InviteCode"]
-
-    
-    await client.post('/auth/register', json={
-        "login": "guest",
-        "password": "pass123"
-    })
-
-    login_response2 = await client.post('/auth/login', json={
-        "login": "guest",
-        "password": "pass123"
-    })
-    token = login_response2.json()["access_token"]
-
-    response = await client.post('/lobbies/join', json={
-        "InviteCode": invite_code
-    }, headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_join_nonexistent_lobby(client):
-    await client.post('/auth/register', json={
-        "login": "user6",
-        "password": "pass123"
-    })
-
-    login_response = await client.post('/auth/login', json={
-        "login": "user6",
-        "password": "pass123"
-    })
-    token = login_response.json()["access_token"]
-
-    response = await client.post('/lobbies/join', json={
-        "InviteCode": "INVALID"
-    },headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_leave_lobby(client):
-    await client.post('/auth/register', json={
-        "login": "leaveuser",
-        "password": "pass123"
-    })
-
-    login_response = await client.post('/auth/login', json={
-        "login": "leaveuser",
-        "password": "pass123"
-    })
-    token = login_response.json()["access_token"]
-
-    create_response = await client.post('/lobbies/create', json={
-        "max_players": 4,
-        "rounds": 3
-    },headers={"Authorization": f"Bearer {token}"})
-    invite_code = create_response.json()["InviteCode"]
-
-    response = await client.post('/lobbies/leave', json={
-        "InviteCode": invite_code
-    },headers={"Authorization": f"Bearer {token}"})
+    client.cookies.set("access_token", token2)
+    response = await client.put(f"/lobbies/{created_lobby}/members",json={"invite_code": created_lobby})
     assert response.status_code == 200
 
 @pytest.mark.asyncio
-async def test_change_name(client):
-    reg_response = await client.post('/auth/register', json={
-        "login": "nameuser",
-        "password": "pass123"
-    })
-    assert reg_response.status_code == 200
+async def test_leave_lobby(client,db_session, created_lobby):
+    user = await UserRepository.create(db_session,google_id="12335",username="test3")
+    await db_session.commit()
+    token = TokenManager.create_token({"id": user.id})
 
-    login_response = await client.post("/auth/login", json={
-        "login": "nameuser",
-        "password": "pass123"
-    })
-    assert login_response.status_code == 200
-    token = login_response.json()["access_token"]
+    client.cookies.set("access_token", token)
 
-    change_response = await client.post(
-        "/profile/name", 
-        json={"new_name": "testpon"},
-        headers={"Authorization": f"Bearer {token}"})
+    response = await client.delete(f"/lobbies/{created_lobby}/members",json={"invite_code": created_lobby})
+    assert response.status_code == 200
 
-    assert change_response.status_code == 200
-    assert change_response.json()["name"] == "testpon"
+@pytest.mark.asyncio
+async def test_get_random(client, test_user):
+    client.cookies.set("access_token", test_user["token"])
+    response = await client.get("/lobbies/random")
+    assert response.status_code == 200

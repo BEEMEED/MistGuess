@@ -6,8 +6,6 @@ export interface LoginResponse {
 }
 
 export interface CreateLobbyRequest {
-  max_players: number;
-  rounds: number;
   timer: number;
 }
 
@@ -65,8 +63,6 @@ export interface WSPlayerJoinedEvent {
   player: number;
   players: PlayerInfo[];
   host: string;
-  max_players: number;
-  total_rounds: number;
 }
 
 export interface WSPlayerLeftEvent {
@@ -77,7 +73,8 @@ export interface WSPlayerLeftEvent {
 
 export interface WSGameStartedEvent {
   type: 'game_started';
-  rounds: number;
+  hp: { [player_id: number]: number };
+  timer: number;
 }
 
 export interface WSRoundStartedEvent {
@@ -95,20 +92,24 @@ export interface WSPlayerGuessedEvent {
 
 export interface WSRoundEndedEvent {
   type: 'round_ended';
-  round: number;
-  winner: {
-    player: number;
-    distance: number;
-  };
+  winner: number;
+  damage: number;
+  hp: { [player_id: number]: number };
   results: Array<{
     player: number;
     distance: number;
     lat: number;
     lon: number;
+    points: number;
   }>;
   lat: number;
   lon: number;
-  nextRoundTime: number; // Server timestamp when next round will start
+}
+
+export interface WSRoundTimedoutEvent {
+  type: 'round_timedout';
+  hp: { [player_id: number]: number };
+  num_guesses: number;
 }
 
 export interface WSGameEndedEvent {
@@ -144,13 +145,10 @@ export interface WSPlayerReconnectedEvent {
 }
 
 export interface WSReconnectSuccessEvent {
-  type: 'reconnect_succes'; // typo from backend
+  type: 'reconnect_succes';
   host: string;
-  max_players: number;
-  total_rounds: number;
   game_state?: {
-    current_round: number;
-    total_rounds: number;
+    current_location_index: number;
     locations: {
       lat: number;
       lon: number;
@@ -158,6 +156,7 @@ export interface WSReconnectSuccessEvent {
     };
     roundstart_time: number;
     timer: number;
+    hp: { [player_id: number]: number };
     PlayerHasGuessed: boolean;
     player_guess: string[];
   };
@@ -171,6 +170,7 @@ export type WSEvent =
   | WSRoundStartedEvent
   | WSPlayerGuessedEvent
   | WSRoundEndedEvent
+  | WSRoundTimedoutEvent
   | WSGameEndedEvent
   | WSBroadcastEvent
   | WSRankUpEvent
@@ -240,23 +240,19 @@ export interface PlayerGuess {
 }
 
 export interface RoundResult {
-  round: number;
   targetLocation: Location;
-  guesses: PlayerGuess[];
-  winner: {
-    player: number;
-    distance: number;
-  };
-  nextRoundTime?: number; // Server timestamp when next round will start
+  guesses: Array<PlayerGuess & { points: number }>;
+  winner: number;
+  damage: number;
+  hp: { [player_id: number]: number };
 }
 
 export interface GameState {
   lobbyCode: string;
   players: PlayerInfo[];
   host: number;
-  maxPlayers: number;
-  totalRounds: number;
-  currentRound: number;
+  hp: { [player_id: number]: number };
+  currentLocationIndex: number;
   isGameStarted: boolean;
   isGameEnded: boolean;
   currentLocation: Location | null;
@@ -271,8 +267,8 @@ export interface GameState {
     old_rank: string;
     new_rank: string;
   }>;
-  roundTimer?: number; // Timer in seconds for current round
-  roundStartTime?: number; // Timestamp when round started (for countdown)
+  roundTimer?: number;
+  roundStartTime?: number;
 }
 
 // UI State Types
@@ -304,7 +300,7 @@ export interface AuthContextType {
 
 export interface LobbyContextType {
   gameState: GameState | null;
-  createLobby: (maxPlayers: number, rounds: number, timer: number) => Promise<string>;
+  createLobby: () => Promise<string>;
   joinLobby: (inviteCode: string, isReconnect?: boolean) => Promise<void>;
   leaveLobby: () => Promise<void>;
   startGame: () => void;

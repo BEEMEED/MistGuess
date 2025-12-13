@@ -6,7 +6,7 @@ interface RoundResultsProps {
   result: RoundResult;
   onContinue: () => void;
   players: PlayerInfo[];
-  nextRoundTime?: number; // Server timestamp when next round starts
+  currentHp: { [player_id: number]: number };
 }
 
 declare global {
@@ -15,10 +15,11 @@ declare global {
   }
 }
 
-export const RoundResults: React.FC<RoundResultsProps> = ({ result, onContinue, players, nextRoundTime }) => {
+export const RoundResults: React.FC<RoundResultsProps> = ({ result, onContinue, players, currentHp }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(1); // Reduced to 1s to match backend 5s total
+  const [animationStage, setAnimationStage] = useState(0); // 0: points display, 1: attack, 2: damage, 3: results
 
   // Helper function to get player display name
   const getPlayerName = (user_id: number): string => {
@@ -138,47 +139,101 @@ export const RoundResults: React.FC<RoundResultsProps> = ({ result, onContinue, 
     }
   }, [result]);
 
-  // Auto-continue using server-synced time
+  // Animation stages timing (total 5s to match backend)
   useEffect(() => {
-    if (!nextRoundTime) {
-      // Fallback to old behavior if server doesn't send nextRoundTime
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            onContinue();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
+    const timers: NodeJS.Timeout[] = [];
 
-    // Use server time for synchronized countdown
-    const updateCountdown = () => {
-      const now = Date.now();
-      const remaining = Math.ceil((nextRoundTime - now) / 1000);
+    // Stage 0 -> 1: Show points for 2s, then start attack
+    timers.push(setTimeout(() => setAnimationStage(1), 2000));
 
-      if (remaining <= 0) {
-        setCountdown(0);
-        onContinue();
-      } else {
-        setCountdown(remaining);
-      }
-    };
+    // Stage 1 -> 2: Attack animation for 0.8s, then show damage
+    timers.push(setTimeout(() => setAnimationStage(2), 2800));
 
-    updateCountdown(); // Initial update
-    const interval = setInterval(updateCountdown, 100); // Update frequently for accuracy
+    // Stage 2 -> 3: Show damage for 1.2s, then show full results
+    timers.push(setTimeout(() => setAnimationStage(3), 4000));
 
-    return () => clearInterval(interval);
-  }, [nextRoundTime, onContinue]);
+    return () => timers.forEach(timer => clearTimeout(timer));
+  }, []);
 
+  useEffect(() => {
+    if (animationStage < 3) return; // Don't start countdown until animation is done
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onContinue();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [onContinue, animationStage]);
+
+  const winnerGuess = result.guesses.find(g => g.player === result.winner);
+  const loserGuess = result.guesses.find(g => g.player !== result.winner);
+
+  // Animation stages 0-2: Show damage animation
+  if (animationStage < 3) {
+    return (
+      <div className="round-results-overlay">
+        <div className="damage-animation-container">
+          {/* Stage 0: Show both players' points */}
+          <div className={`points-display ${animationStage >= 1 ? 'fade-out' : ''}`}>
+            <div className="player-points winner-points">
+              <div className="points-avatar">👑</div>
+              <div className="points-info">
+                <div className="points-name">{getPlayerName(result.winner)}</div>
+                <div className="points-value">{winnerGuess?.points.toLocaleString() || 0}</div>
+                <div className="points-label">points</div>
+              </div>
+            </div>
+
+            <div className="vs-divider">VS</div>
+
+            <div className="player-points loser-points">
+              <div className="points-avatar">💔</div>
+              <div className="points-info">
+                <div className="points-name">{getPlayerName(loserGuess?.player || 0)}</div>
+                <div className="points-value">{loserGuess?.points.toLocaleString() || 0}</div>
+                <div className="points-label">points</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stage 1: Attack animation */}
+          {animationStage >= 1 && (
+            <div className={`attack-animation ${animationStage >= 2 ? 'fade-out' : ''}`}>
+              <div className="attack-projectile">⚔️</div>
+              <div className="attack-text">HIT!</div>
+            </div>
+          )}
+
+          {/* Stage 2: Damage display */}
+          {animationStage >= 2 && (
+            <div className="damage-impact">
+              <div className="impact-effect">💥</div>
+              <div className="damage-number">-{result.damage}</div>
+              <div className="damage-hp-label">HP DAMAGE</div>
+              <div className="damage-victim">to {getPlayerName(loserGuess?.player || 0)}</div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Stage 3: Show full results with map
   return (
     <div className="round-results-overlay">
       <div className="round-results-container">
         <div className="round-results-header">
-          <h2>Round {result.round} Results</h2>
+          <h2>Round Results</h2>
+          <div className="damage-display">
+            <span className="damage-value">-{result.damage} HP</span>
+            <span className="damage-label">to {getPlayerName(loserGuess?.player || 0)}</span>
+          </div>
         </div>
 
         <div className="round-results-content">
@@ -190,25 +245,36 @@ export const RoundResults: React.FC<RoundResultsProps> = ({ result, onContinue, 
             <h3>Player Results</h3>
             <div className="results-items">
               {result.guesses
-                .sort((a, b) => a.distance - b.distance)
-                .map((guess, index) => (
-                  <div
-                    key={guess.player}
-                    className={`result-item ${index === 0 ? 'winner' : ''}`}
-                  >
-                    <div className="result-rank">#{index + 1}</div>
-                    <div className="result-player">{getPlayerName(guess.player)}</div>
-                    <div className="result-distance">
-                      {Math.round(guess.distance / 1000)} km
+                .sort((a, b) => b.points - a.points)
+                .map((guess, index) => {
+                  const isWinner = guess.player === result.winner;
+                  return (
+                    <div
+                      key={guess.player}
+                      className={`result-item ${isWinner ? 'winner' : 'loser'}`}
+                    >
+                      <div className="result-rank">{isWinner ? '👑' : '💔'}</div>
+                      <div className="result-player">{getPlayerName(guess.player)}</div>
+                      <div className="result-stats">
+                        <div className="result-distance">
+                          {Math.round(guess.distance / 1000)} km
+                        </div>
+                        <div className="result-points">
+                          {guess.points.toLocaleString()} pts
+                        </div>
+                        <div className="result-hp">
+                          HP: {currentHp[guess.player] || 0}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
 
             <div className="round-winner">
-              <div className="winner-icon">👑</div>
+              <div className="winner-icon">⚔️</div>
               <div className="winner-text">
-                <strong>{getPlayerName(result.winner.player)}</strong> wins this round!
+                <strong>{getPlayerName(result.winner)}</strong> wins this round!
               </div>
             </div>
           </div>

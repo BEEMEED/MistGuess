@@ -1,4 +1,3 @@
-from utils.bd_service import DataBase
 from config import config
 import secrets
 from fastapi import HTTPException

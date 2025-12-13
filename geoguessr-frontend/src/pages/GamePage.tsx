@@ -54,11 +54,10 @@ export const GamePage: React.FC = () => {
   }, [gameState?.isGameEnded, navigate, code]);
 
   useEffect(() => {
-    // Show results overlay when new round result arrives
     console.log('Checking if should show results overlay:', {
       hasResults: gameState?.roundResults && gameState.roundResults.length > 0,
       resultsLength: gameState?.roundResults?.length,
-      currentRound: gameState?.currentRound,
+      currentLocationIndex: gameState?.currentLocationIndex,
       showingResults,
       lastShownResultRound,
     });
@@ -68,30 +67,28 @@ export const GamePage: React.FC = () => {
       gameState.roundResults.length > 0 &&
       !showingResults
     ) {
-      const latestResult = gameState.roundResults[gameState.roundResults.length - 1];
-      console.log('Latest result:', latestResult);
+      const resultsCount = gameState.roundResults.length;
+      console.log('Latest result count:', resultsCount);
       console.log('Comparison:', {
-        latestResultRound: latestResult.round,
+        resultsCount,
         lastShownResultRound,
-        shouldShow: latestResult.round > lastShownResultRound,
+        shouldShow: resultsCount > lastShownResultRound,
       });
 
-      if (latestResult.round > lastShownResultRound) {
+      if (resultsCount > lastShownResultRound) {
         console.log('SHOWING RESULTS OVERLAY!');
         setShowingResults(true);
-        setLastShownResultRound(latestResult.round);
+        setLastShownResultRound(resultsCount);
       }
     }
   }, [gameState?.roundResults, showingResults, lastShownResultRound]);
 
   useEffect(() => {
-    // Reset guess state when round changes
-    // DON'T reset showingResults here - let user close it with Continue button
     setHasGuessed(false);
     setGuessLocation(null);
     setMapKey((prev) => prev + 1);
     setRoundEndTriggered(false);
-  }, [gameState?.currentRound]);
+  }, [gameState?.currentLocationIndex]);
 
   // Reset roundEndTriggered when results are shown
   useEffect(() => {
@@ -121,10 +118,10 @@ export const GamePage: React.FC = () => {
     };
 
     updateTimer();
-    const interval = setInterval(updateTimer, 100); // Update every 100ms for smooth countdown
+    const interval = setInterval(updateTimer, 100);
 
     return () => clearInterval(interval);
-  }, [gameState?.roundTimer, gameState?.roundStartTime, gameState?.currentRound, hasGuessed]);
+  }, [gameState?.roundTimer, gameState?.roundStartTime, gameState?.currentLocationIndex, hasGuessed]);
 
   // Show notifications when players guess
   useEffect(() => {
@@ -247,12 +244,40 @@ export const GamePage: React.FC = () => {
         </div>
       ))}
 
-      {/* Round info overlay - top left */}
-      <div className="round-info-overlay">
-        <span className="round-label">Round</span>
-        <span className="round-number">
-          {gameState.currentRound} / {gameState.totalRounds}
-        </span>
+      {/* HP bars overlay - top left */}
+      <div className="hp-bars-overlay">
+        {gameState.players.map((player) => {
+          const playerHp = gameState.hp[player.user_id] || 0;
+          const hpPercentage = (playerHp / 6000) * 100;
+          const isCurrentUser = player.user_id === user.user_id;
+
+          return (
+            <div key={player.user_id} className={`hp-bar-container ${isCurrentUser ? 'current-user' : ''}`}>
+              <div className="hp-bar-avatar">
+                <img
+                  src={player.avatar || '/default-avatar.png'}
+                  alt={player.name}
+                  className="hp-avatar-image"
+                />
+              </div>
+              <div className="hp-bar-content">
+                <div className="hp-bar-info">
+                  <span className="hp-player-name">{player.name}</span>
+                  <span className="hp-value">{Math.max(0, playerHp)}</span>
+                </div>
+                <div className="hp-bar-background">
+                  <div
+                    className="hp-bar-fill"
+                    style={{
+                      width: `${Math.max(0, hpPercentage)}%`,
+                      backgroundColor: hpPercentage > 50 ? '#22c55e' : hpPercentage > 25 ? '#eab308' : '#ef4444'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Timer overlay - top center */}
@@ -284,7 +309,7 @@ export const GamePage: React.FC = () => {
         <div className="streetview-panel-fullscreen">
           {gameState.currentLocation ? (
             <StreetViewPanorama
-              key={gameState.currentRound}
+              key={gameState.currentLocationIndex}
               lat={gameState.currentLocation.lat}
               lon={gameState.currentLocation.lon}
             />
@@ -353,13 +378,12 @@ export const GamePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Round results overlay */}
       {showingResults && gameState.roundResults.length > 0 && (
         <RoundResults
           result={gameState.roundResults[gameState.roundResults.length - 1]}
           onContinue={handleContinueFromResults}
           players={gameState.players}
-          nextRoundTime={gameState.roundResults[gameState.roundResults.length - 1].nextRoundTime}
+          currentHp={gameState.hp}
         />
       )}
 

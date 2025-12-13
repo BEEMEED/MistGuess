@@ -1,4 +1,3 @@
-from .bd_service import DataBase
 from config import config
 from repositories.location_repository import LocationRepository
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,3 +26,11 @@ class LocationService:
         return (
             f"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={lat},{lon}"
         )
+    
+    @staticmethod
+    async def calculate_points(distance: float):
+        import math
+
+        distance_km = distance / 1000
+        points = 5000 * math.pow(0.998036, distance_km)
+        return int(round(points))

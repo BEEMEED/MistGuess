@@ -140,20 +140,8 @@ class APIService {
 
   // Lobby endpoints
 
-  public async createLobby(
-    maxPlayers: number,
-    rounds: number,
-    timer: number
-  ): Promise<CreateLobbyResponse> {
-    // Backend gets user_id from token, only send max_players, rounds, and timer
-    const response = await this.client.post<CreateLobbyResponse>(
-      '/lobbies',
-      {
-        max_players: maxPlayers,
-        rounds: rounds,
-        timer: timer,
-      }
-    );
+  public async createLobby(): Promise<CreateLobbyResponse> {
+    const response = await this.client.post<CreateLobbyResponse>('/lobbies', {});
     return response.data;
   }
 

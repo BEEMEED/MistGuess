@@ -40,48 +40,42 @@ async def GameStart(
             user_id = token_data["user_id"]
 
             await ws_service.player_joined(db, user_id, lobby_code, websocket)
+            
+            from starlette.websockets import WebSocketState
+            if websocket.client_state != WebSocketState.CONNECTED:
+                return
     except HTTPException:
         await websocket.close(code=1008, reason="Invalid token")
         return
+    handlers = {
+        # game
+        "game_start": lambda db, data: ws_service.GameStart(db,lobby_code),
+        "game_end": lambda db, data: ws_service.GameEnded(db,lobby_code),
+        "submit_guess": lambda db, data: ws_service.submitGuess(db,user_id,lobby_code,data["lat"],data["lon"]),
+        # players
+        "player_joined": lambda db, data: ws_service.player_joined(db,user_id,lobby_code,websocket),
+        "player_left": lambda db, data: ws_service.player_left(db,user_id,lobby_code,websocket),
+        "player_reconnect": lambda db,data: ws_service.reconect(db,user_id,lobby_code,websocket),
+        "broadcast": lambda db, data:ws_service.broadcast(db,user_id,lobby_code, data["message"]),
+        # rounds
+        "round_start": lambda db, data: ws_service.RoundStarted(db,lobby_code),
+        "round_end": lambda db, data: ws_service.RoundEnded(db,lobby_code),
+        
+        
+    }
     from database.database import asyncsession
     try:
         while True:
             data = await websocket.receive_json()
-
+            
             async with asyncsession() as db:
-                if data["type"] == "game_start":
-                    await ws_service.GameStart(db, lobby_code)
-
-                elif data["type"] == "submit_guess":
-                    await ws_service.submitGuess(
-                        db, user_id, lobby_code, data["lat"], data["lon"]
-                    )
-
-                elif data["type"] == "player_joined":
-                    await ws_service.player_joined(
-                        db=db,
-                        user_id=user_id,
-                        InviteCode=lobby_code,
-                        websocket=websocket,
-                    )
-
-                elif data["type"] == "player_left":
-                    await ws_service.player_left(db, user_id, lobby_code, websocket)
-
-                elif data["type"] == "round_start":
-                    await ws_service.RoundStarted(db, lobby_code)
-
-                elif data["type"] == "round_end":
-                    await ws_service.RoundEnded(lobby_code)
-
-                elif data["type"] == "game_end":
-                    await ws_service.GameEnded(db, lobby_code)
-
-                elif data["type"] == "broadcast":
-                    await ws_service.broadcast(db, user_id, lobby_code, data["message"])
-
-                elif data["type"] == "player_reconnect":
-                    await ws_service.reconect(db, user_id, lobby_code, websocket)
+                message_type = data.get("type")
+                handler = handlers.get(message_type)
+                if handler:
+                    await handler(db,data)
+                else:
+                    logger.warning(f"Unknown message type: {message_type}")
+                
 
     except WebSocketDisconnect:
         if lobby_code not in ws_service.connections:

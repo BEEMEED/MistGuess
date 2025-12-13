@@ -1,5 +1,4 @@
 from fastapi import WebSocket, APIRouter, Depends, HTTPException, Body
-from utils.bd_service import DataBase
 from utils.LocationService import LocationService
 from services.authorization import AuthService
 from starlette.websockets import WebSocketDisconnect
@@ -19,13 +18,24 @@ router = APIRouter()
 auth = AuthService()
 locat = LocationService()
 
+#self.games
+        #     "lobby_code": {
+        #         "current_location_index": 0,  # Current location index (0-based)
+        #         "locations": [...],  # List of locations: [{"lat": float, "lon": float, "url": str}]
+        #         "guesses": {  # Guesses per location index
+        #             0: [{"player": user_id, "distance": meters, "lat": float, "lon": float, "points": int}],
+        #             1: [...]
+        #         },
+        #         "hp": {user_id1: 6000, user_id2: 5702},  # Current HP for each player
+        #         "started_rounds": [0, 1, ...],  # Prevent duplicate round starts
+        #         "ended_rounds": [0, 1, ...],  # Prevent duplicate round ends
 
 class Websocket_service:
     def __init__(self):
-        self.connections = {}  # invitecode: [(login, ws)]
-        self.games = {}
-        self.timers = {}  # invitecode: timer
-        self.disconnects = {}  # invitecode: [(login, timer)]
+        self.connections: dict[str,list[tuple[int, WebSocket]]] = {}  # invitecode: [(login, ws)]
+        self.games: dict[str, dict] = {} 
+        self.timers = {} # invitecode: timer
+        self.disconnects: dict[str,dict[int, float]] = {}  # invitecode: [(login, timer)]
 
     async def kick_timer(
         self, db: AsyncSession, user_id: int, invitecode: str, ws: WebSocket
@@ -56,8 +66,8 @@ class Websocket_service:
                     "ingame": invitecode in self.games,
                 }
                 if invitecode in self.games:
-                    lobby_info["currentRound"] = self.games[invitecode]["currentRound"]
-                    lobby_info["totalRounds"] = self.games[invitecode]["totalRounds"]
+                    lobby_info["current_location_index"] = self.games[invitecode]["current_location_index"]
+                    lobby_info["hp"] = self.games[invitecode]["hp"]
                 active_lobby.append(lobby_info)
         return active_lobby
 
@@ -78,11 +88,16 @@ class Websocket_service:
         self, db: AsyncSession, user_id: int, InviteCode: str, websocket: WebSocket
     ):
         lobby = await LobbyRepository.get_by_code(db, InviteCode)
+
         if not lobby:
             logger.error(f"InviteCode {InviteCode} not found")
             raise HTTPException(status_code=404, detail="InviteCode not found")
-
+        
         if user_id not in lobby.users:
+            if len(lobby.users) >= 2:
+                await websocket.close(code=1008, reason="Lobby is full")
+                return
+
             await LobbyRepository.add_user(db, InviteCode, user_id)
             lobby = await LobbyRepository.get_by_code(db, InviteCode)
 
@@ -100,8 +115,6 @@ class Websocket_service:
             "type": "player_joined",
             "player": user_id,
             "host": lobby.host_id,
-            "max_players": lobby.max_players,
-            "total_rounds": lobby.rounds_num,
             "players": players_info,
         }
         for _, ws in self.connections[InviteCode]:
@@ -181,12 +194,16 @@ class Websocket_service:
             raise HTTPException(status_code=404, detail="InviteCode not found")
 
         self.games[InviteCode] = {
-            "currentRound": 1,
-            "totalRounds": lobby.rounds_num,
+            "current_location_index": 0,
             "locations": lobby.locations,
             "guesses": {},
+            "hp": {player_id: 6000 for player_id in lobby.users},
         }
-        message = {"type": "game_started", "rounds": lobby.rounds_num}
+        message = {
+            "type": "game_started",
+            "hp": {player_id: 6000 for player_id in lobby.users},
+            "timer": 240,
+        }
         for _, ws in self.connections[InviteCode]:
             try:
                 await ws.send_json(message)
@@ -198,12 +215,11 @@ class Websocket_service:
         if InviteCode not in self.games:
             return
 
-        currentRound = self.games[InviteCode]["currentRound"]
+        currentRound = self.games[InviteCode]["current_location_index"]
 
-        if currentRound > self.games[InviteCode]["totalRounds"]:
-            return
-
-        if "RoundStartTime" in self.games[InviteCode] and currentRound in self.games[InviteCode].get("started_rounds", []):
+        if "RoundStartTime" in self.games[InviteCode] and currentRound in self.games[
+            InviteCode
+        ].get("started_rounds", []):
             return
 
         if "started_rounds" not in self.games[InviteCode]:
@@ -211,7 +227,7 @@ class Websocket_service:
         self.games[InviteCode]["started_rounds"].append(currentRound)
 
         locations_list = self.games[InviteCode]["locations"]
-        current_location = locations_list[currentRound - 1]
+        current_location = locations_list[currentRound]
 
         lobby = await LobbyRepository.get_by_code(db, InviteCode)
         if not lobby:
@@ -219,7 +235,6 @@ class Websocket_service:
 
         message = {
             "type": "round_started",
-            "round": currentRound,
             "lat": current_location["lat"],
             "lon": current_location["lon"],
             "url": current_location["url"],
@@ -238,43 +253,87 @@ class Websocket_service:
         if InviteCode in self.timers:
             self.timers[InviteCode].cancel()
 
-        task = asyncio.create_task(self.timer(InviteCode, lobby.timer))
+        task = asyncio.create_task(self.timer(db,InviteCode, lobby.timer))
         self.timers[InviteCode] = task
 
         logger.info(f"Round {currentRound} started for {InviteCode}")
 
-    async def RoundEnded(self, InviteCode: str):
+    async def RoundEnded(self,db: AsyncSession, InviteCode: str):
         if InviteCode not in self.games:
             return
 
-        current_round = self.games[InviteCode]["currentRound"]
+        locations_list = self.games[InviteCode]["locations"]
+        current_index = self.games[InviteCode]["current_location_index"]
 
-        if current_round not in self.games[InviteCode]["guesses"]:
+        guesses = self.games[InviteCode]["guesses"].get(current_index, [])
+        num_guesses = len(guesses)
+
+        if num_guesses < 2:
+            if num_guesses == 0:
+                for player_id in self.games[InviteCode]["hp"]:
+                    self.games[InviteCode]["hp"][player_id] -= 500
+            elif num_guesses == 1:
+                player_who_guessed = guesses[0]["player"]
+                for player_id in self.games[InviteCode]["hp"]:
+                    if player_id != player_who_guessed:
+                        self.games[InviteCode]["hp"][player_id] -= 1000
+
+            for player_id, hp in self.games[InviteCode]["hp"].items():
+                if hp <= 0:
+                    await self.GameEnded(db, InviteCode)
+                    return
+
+            message = {
+                "type": "round_timedout",
+                "hp": self.games[InviteCode]["hp"],
+                "num_guesses": num_guesses,
+            }
+            if InviteCode in self.connections:
+                for _,ws in self.connections[InviteCode]:
+                    try:
+                        await ws.send_json(message)
+                    except Exception as e:
+                        logger.error(f"Failed to send round_timedout to connection: {e}")
+
+            if "ended_rounds" not in self.games[InviteCode]:
+                self.games[InviteCode]["ended_rounds"] = []
+            self.games[InviteCode]["ended_rounds"].append(current_index)
+            self.games[InviteCode]["current_location_index"] += 1
+            await asyncio.sleep(5)
+            await self.RoundStarted(db, InviteCode)
             return
 
         if "ended_rounds" not in self.games[InviteCode]:
             self.games[InviteCode]["ended_rounds"] = []
-
-        if current_round in self.games[InviteCode]["ended_rounds"]:
+        if current_index in self.games[InviteCode]["ended_rounds"]:
             return
+        self.games[InviteCode]["ended_rounds"].append(current_index)
 
-        self.games[InviteCode]["ended_rounds"].append(current_round)
+        for guess in guesses:
+            points = await locat.calculate_points(guess["distance"])
+            guess["points"] = points
 
-        locations_list = self.games[InviteCode]["locations"]
-        round_guesses = self.games[InviteCode]["guesses"][current_round]
-        current_location = locations_list[current_round - 1]
+        current_location = locations_list[current_index]
 
-        round_winner = min(round_guesses, key=lambda x: x["distance"])
-        next_round_time = int(time.time() * 1000) + 5000
+        winner_guess = max(guesses, key=lambda x: x["points"])
+        loser_guess = min(guesses, key=lambda x: x["points"])
+
+        damage = winner_guess["points"] - loser_guess["points"]
+        loser_id = loser_guess["player"]
+        self.games[InviteCode]["hp"][loser_id] -= damage
+
+        if self.games[InviteCode]["hp"][loser_id] <= 0:
+            await self.GameEnded(db, InviteCode)
+            return
 
         message = {
             "type": "round_ended",
-            "round": current_round,
-            "winner": round_winner,
-            "results": round_guesses,
+            "winner": winner_guess["player"],
+            "damage": damage,
+            "hp": self.games[InviteCode]["hp"],
+            "results": guesses,
             "lat": current_location["lat"],
             "lon": current_location["lon"],
-            "nextRoundTime": next_round_time,
         }
 
         if InviteCode in self.connections:
@@ -284,8 +343,11 @@ class Websocket_service:
                 except Exception as e:
                     logger.error(f"Failed to send round_ended to connection: {e}")
 
-        self.games[InviteCode]["currentRound"] += 1
-        logger.info(f"Round {current_round} ended for {InviteCode}")
+        self.games[InviteCode]["current_location_index"] += 1
+        await asyncio.sleep(5)
+        await self.RoundStarted(db,InviteCode)
+
+        logger.info(f"Round {current_index} ended for {InviteCode}")
 
     async def user_rank_up(self, db: AsyncSession, players: list):
 
@@ -319,7 +381,7 @@ class Websocket_service:
                     total_distances[player] = 0
                 total_distances[player] += guess["distance"]
 
-        winner = min(total_distances, key=lambda x: total_distances[x])
+        winner_id = max(self.games[InviteCode]["hp"],key=lambda x: self.games[InviteCode]["hp"][x])
 
         players = []
         for user_id, _ in self.connections[InviteCode]:
@@ -328,7 +390,7 @@ class Websocket_service:
 
         message = {
             "type": "game_ended",
-            "winner": winner,
+            "winner": winner_id,
             "total_distances": total_distances,
             "players": players,
         }
@@ -353,9 +415,8 @@ class Websocket_service:
             if user:
                 await UserRepository.update(db, user_id, xp=user.xp + 10)
 
-        winner_user = await UserRepository.get_by_id(db, winner)
-        if winner_user:
-            await UserRepository.update(db, winner_user.id, xp=winner_user.xp + 50)
+        if winner_id:
+            await UserRepository.update(db, winner_id.id, xp=winner_id.xp + 50)
 
         await self.user_rank_up(db, player_ids)
 
@@ -402,37 +463,37 @@ class Websocket_service:
             logger.warning(f"Lobby {lobbycode} not found in games or connections")
             return
 
-        user = await UserRepository.get_by_id(db, user_id)
-        if not user:
-            logger.error(f"User {user_id} not found in database")
-            raise HTTPException(status_code=404, detail="User not found")
+        current_index = self.games[lobbycode]["current_location_index"]
 
-        current_round = self.games[lobbycode]["currentRound"]
-        logger.info(f"Current round for {lobbycode}: {current_round}")
 
-        if current_round not in self.games[lobbycode]["guesses"]:
-            self.games[lobbycode]["guesses"][current_round] = []
+        if current_index not in self.games[lobbycode]["guesses"]:
+            self.games[lobbycode]["guesses"][current_index] = []
+
 
         existing_guess = any(
             g["player"] == user_id
-            for g in self.games[lobbycode]["guesses"][current_round]
+            for g in self.games[lobbycode]["guesses"][current_index]
         )
         if existing_guess:
-            logger.warning(f"Player {user_id} already guessed for round {current_round}")
+            logger.warning(f"Player {user_id} already guessed for location {current_index}")
             return
 
+  
         locations_list = self.games[lobbycode]["locations"]
-        current_location = locations_list[current_round - 1]
+        current_location = locations_list[current_index]
         lat_cur = current_location["lat"]
         lon_cur = current_location["lon"]
+
+
         distance = locat.haversine_m(lat, lon, lat_cur, lon_cur)
 
-        self.games[lobbycode]["guesses"][current_round].append(
+  
+        self.games[lobbycode]["guesses"][current_index].append(
             {"player": user_id, "distance": distance, "lat": lat, "lon": lon}
         )
 
+ 
         message = {"type": "player_guessed", "player": user_id}
-
         if lobbycode in self.connections:
             for _, ws in self.connections[lobbycode]:
                 try:
@@ -440,49 +501,23 @@ class Websocket_service:
                 except Exception as e:
                     logger.error(f"Failed to send player_guessed to connection: {e}")
 
-        guesses_count = len(self.games[lobbycode]["guesses"][current_round])
-        connections_count = len(self.connections[lobbycode])
-        logger.info(f"Guesses: {guesses_count}/{connections_count} for {lobbycode}")
+      
+        guesses_count = len(self.games[lobbycode]["guesses"][current_index])
+        logger.info(f"Guesses: {guesses_count}/2 for {lobbycode}")
 
-        if guesses_count == connections_count:
-            logger.info(f"All players guessed! Ending round {current_round} for {lobbycode}")
-            await self.RoundEnded(lobbycode)
+        if guesses_count == 2:
+            logger.info(f"All players guessed! Ending round for {lobbycode}")
+            await self.RoundEnded(db, lobbycode)
 
             if lobbycode not in self.games:
                 logger.info(f"Game {lobbycode} was deleted during RoundEnded")
                 return
 
-            if (
-                self.games[lobbycode]["currentRound"]
-                <= self.games[lobbycode]["totalRounds"]
-            ):
-                logger.info(f"Starting next round for {lobbycode}")
-                await asyncio.sleep(5)
-                await self.RoundStarted(db, lobbycode)
-            else:
-                logger.info(f"All rounds completed! Ending game {lobbycode}")
-                await self.GameEnded(db, lobbycode)
-                return
-
-        if lobbycode in self.games and lobbycode in self.timers:
-            self.timers[lobbycode].cancel()
-
-        if lobbycode in self.games:
-            task = asyncio.create_task(self.timer(lobbycode, 40))
-            self.timers[lobbycode] = task
-
-            await self.broadcast(
-                db,
-                user_id,
-                lobbycode,
-                {"type": "timer_short", "timer": 40, "time_stap": time.time()},
-            )
-
         logger.info(f"Player {user_id} guessed for {lobbycode}")
 
-    async def timer(self, lobbycode: str, time: int):
+    async def timer(self,db: AsyncSession, lobbycode: str, time: int):
         await asyncio.sleep(time)
-        await self.RoundEnded(lobbycode)
+        await self.RoundEnded(db,lobbycode)
 
     async def reconect(
         self, db: AsyncSession, user_id: int, inviteCode: str, ws: WebSocket
@@ -505,16 +540,13 @@ class Websocket_service:
         message = {
             "type": "reconnect_succes",
             "host": lobby.host_id,
-            "max_players": lobby.max_players,
-            "total_rounds": lobby.rounds_num,
         }
         if inviteCode in self.games:
-            rounds = self.games[inviteCode]["currentRound"]
-            current_location = self.games[inviteCode]["locations"][rounds - 1] 
+            current_index = self.games[inviteCode]["current_location_index"]
+            current_location = self.games[inviteCode]["locations"][current_index]
 
             message["game_state"] = {
-                "current_round": rounds,
-                "total_rounds": lobby.rounds_num,
+                "current_location_index": current_index,
                 "locations": {
                     "lat": current_location["lat"],
                     "lon": current_location["lon"],
@@ -522,18 +554,18 @@ class Websocket_service:
                 },
                 "roundstart_time": self.games[inviteCode]["RoundStartTime"],
                 "timer": lobby.timer,
+                "hp": self.games[inviteCode]["hp"],
             }
 
-            current_round = self.games[inviteCode]["currentRound"]
-            if current_round in self.games[inviteCode]["guesses"]:
+            if current_index in self.games[inviteCode]["guesses"]:
                 player_has_guessed = any(
                     g["player"] == user_id
-                    for g in self.games[inviteCode]["guesses"][current_round]
+                    for g in self.games[inviteCode]["guesses"][current_index]
                 )
                 message["game_state"]["PlayerHasGuessed"] = player_has_guessed
                 message["game_state"]["player_guess"] = [
                     g["player"]
-                    for g in self.games[inviteCode]["guesses"][current_round]
+                    for g in self.games[inviteCode]["guesses"][current_index]
                 ]
 
         message["players"] = []
@@ -553,6 +585,8 @@ class Websocket_service:
                     logger.error(f"Failed to send player_reconnected to {login_p}: {e}")
 
         logger.info(f"Player {user_id} reconnected to {inviteCode}")
+
+
 
 
 ws_service = Websocket_service()

@@ -4,14 +4,15 @@ from models.lobby import Lobby
 from sqlalchemy.exc import IntegrityError
 import secrets
 from repositories.location_repository import LocationRepository
+TIMER = 240
 class LobbyRepository:
     
     @staticmethod
-    async def create(db: AsyncSession,host_id:int,max_players:int,rounds_num:int,timer:int):
+    async def create(db: AsyncSession,host_id:int):
         InviteCode = secrets.token_urlsafe(6)
-        locations_objs = await LocationRepository.get_random_location(db, rounds_num)
+        locations_objs = await LocationRepository.get_random_location(db, 13)
         locations = [{"lat": loc.lat, "lon": loc.lon, "region": loc.region, "url": f"https://www.google.com/maps/@{loc.lat},{loc.lon},17z"} for loc in locations_objs]
-        lobby = Lobby(invite_code=InviteCode, host_id=host_id, locations=locations,max_players=max_players,rounds_num=rounds_num,timer=timer,users=[host_id])
+        lobby = Lobby(invite_code=InviteCode, host_id=host_id, locations=locations,timer=TIMER,users=[host_id])
 
         db.add(lobby)
         await db.commit()
@@ -27,8 +28,12 @@ class LobbyRepository:
     async def add_user(db: AsyncSession, lobby_code: str, user_id: int):
         result = await db.execute(select(Lobby).filter(Lobby.invite_code == lobby_code))
         lobby = result.scalar_one_or_none()
+
         if not lobby:
             return None
+        
+        if len(lobby.users) >= 2:
+            return {"message": "Lobby is full"}
 
         if user_id in lobby.users:
             return lobby

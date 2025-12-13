@@ -49,8 +49,6 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
                 ...prev,
                 players: event.players,
                 host: event.host || prev.host,
-                maxPlayers: event.max_players || prev.maxPlayers,
-                totalRounds: event.total_rounds || prev.totalRounds,
               }
             : null
         );
@@ -74,11 +72,9 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
           const newState = {
             ...prev,
             isGameStarted: true,
-            totalRounds: event.rounds,
-            // Don't set currentRound here - it will be set by round_started event
+            hp: event.hp,
           };
 
-          // Host automatically starts first round
           if (user?.user_id === prev.host) {
             setTimeout(() => wsService.startRound(), 500);
           }
@@ -94,15 +90,15 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
           const newState = prev
             ? {
                 ...prev,
-                currentRound: event.round,
+                currentLocationIndex: (prev.currentLocationIndex || 0) + 1,
                 currentLocation: {
                   lat: event.lat,
                   lon: event.lon,
                   url: event.url,
                 },
                 playersGuessed: [],
-                roundTimer: event.timer, // Timer in seconds from backend
-                roundStartTime: event.RoundStartTime || Date.now(), // Use server time or fallback to client time
+                roundTimer: event.timer,
+                roundStartTime: event.RoundStartTime || Date.now(),
               }
             : null;
           console.log('New state after round_started:', newState);
@@ -127,30 +123,38 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
           if (!prev) return prev;
 
           const roundResult: RoundResult = {
-            round: event.round,
             targetLocation: {
               lat: event.lat,
               lon: event.lon,
               url: prev.currentLocation?.url || '',
             },
-            guesses: event.results.map((r) => ({
-              player: r.player,
-              distance: r.distance,
-              lat: r.lat,
-              lon: r.lon,
-            })),
+            guesses: event.results,
             winner: event.winner,
-            nextRoundTime: event.nextRoundTime, // Server timestamp for countdown sync
+            damage: event.damage,
+            hp: event.hp,
           };
 
           console.log('Created roundResult:', roundResult);
           const newState = {
             ...prev,
+            hp: event.hp,
             roundResults: [...prev.roundResults, roundResult],
             playersGuessed: [],
           };
           console.log('New state after round_ended:', newState);
           return newState;
+        });
+        break;
+
+      case 'round_timedout':
+        console.log('round_timedout event received:', event);
+        setGameState((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            hp: event.hp,
+            playersGuessed: [],
+          };
         });
         break;
 
@@ -312,21 +316,19 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
     return unsubscribe;
   }, [handleWSEvent]);
 
-  const createLobby = async (maxPlayers: number, rounds: number, timer: number): Promise<string> => {
+  const createLobby = async (): Promise<string> => {
     if (!user) {
       throw new Error('User not authenticated');
     }
 
     try {
       setError(null);
-      const response = await apiService.createLobby(maxPlayers, rounds, timer);
+      const response = await apiService.createLobby();
       const inviteCode = response.InviteCode;
 
-      // Connect to WebSocket
       await wsService.connect(inviteCode, user.token);
       setIsConnected(true);
 
-      // Initialize game state
       setGameState({
         lobbyCode: inviteCode,
         players: [{
@@ -337,9 +339,8 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
           rank: user.rank || 'Ashborn'
         }],
         host: user.user_id,
-        maxPlayers,
-        totalRounds: rounds,
-        currentRound: 0,
+        hp: {},
+        currentLocationIndex: 0,
         isGameStarted: false,
         isGameEnded: false,
         currentLocation: null,
@@ -391,7 +392,6 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
         wsService.reconnect();
       }
 
-      // Initialize game state (will be updated by WebSocket events)
       setGameState({
         lobbyCode: inviteCode,
         players: [{
@@ -401,10 +401,9 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
           xp: user.xp || 0,
           rank: user.rank || 'Ashborn'
         }],
-        host: '', // Will be determined from WS events
-        maxPlayers: 0, // Unknown initially
-        totalRounds: 0, // Unknown initially
-        currentRound: 0,
+        host: '',
+        hp: {},
+        currentLocationIndex: 0,
         isGameStarted: false,
         isGameEnded: false,
         currentLocation: null,

@@ -1,4 +1,3 @@
-from utils.bd_service import DataBase
 from config import config
 from fastapi import HTTPException, UploadFile, File, Body, Request, Depends
 import logging

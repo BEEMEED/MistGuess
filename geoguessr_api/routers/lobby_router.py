@@ -2,7 +2,6 @@ from fastapi import APIRouter, Body, Depends, Request, HTTPException
 from services.lobby_service import LobbyService
 from services.authorization import AuthService
 from utils.LocationService import LocationService
-from schemas.lobby_schema import LobbyCreateRequest
 from utils.dependencies import Dependies
 from utils.rate_limiter import limiter
 from database.database import get_db
@@ -16,20 +15,17 @@ dependies = Dependies()
 
 
 @router.post("/")
-@limiter.limit("2/minute")
+@limiter.limit("10/minute")
 async def LobbyCreate(
-    body: LobbyCreateRequest,
     request: Request,
     token: dict = Depends(dependies.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await lobby.create_lobby(
-        db, token["user_id"], body.max_players, body.rounds, body.timer
-    )
+    return await lobby.create_lobby(db, token["user_id"])
 
 
 @router.put("/{invite_code}/members")
-@limiter.limit("2/minute")
+@limiter.limit("10/minute")
 async def LobbyJoin(
     invite_code: str,
     request: Request,
