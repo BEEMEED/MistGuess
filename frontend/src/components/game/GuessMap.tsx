@@ -146,8 +146,6 @@ export const GuessMap: React.FC<GuessMapProps> = ({ onGuess, guessLocation, hasG
     }
   };
 
-  console.log('GuessMap render!', { mapLoaded, hasGuessed, guessLocation });
-
   return (
     <div
       className={`guess-map-container ${isExpanded ? 'expanded' : ''}`}

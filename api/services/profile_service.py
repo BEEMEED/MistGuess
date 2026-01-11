@@ -64,7 +64,7 @@ class Profile:
             "xp": user.xp,
             "rank": user.rank,
             "role": user.role,
-            
+            "country_stats": user.country_stats or {},
         }
         lobbies = await LobbyRepository.get_by_user_id(db, user_id)
         message["lobbies"] = [{"code": lobby.invite_code, "host_id": lobby.host_id} for lobby in lobbies]

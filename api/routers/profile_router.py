@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, File, UploadFile
 from services.authorization import AuthService, TokenManager
 from services.profile_service import Profile
-from schemas.profile_schema import EditName
+from schemas.profile_schema import EditName, Leaderboard
 from utils.dependencies import Dependies
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
+from repositories.user_repository import UserRepository
 
 dependies = Dependies()
 router = APIRouter()
@@ -37,3 +38,7 @@ async def avatar_get(token: dict = Depends(dependies.get_current_user),db: Async
 @router.get("/me")
 async def me(token: dict = Depends(dependies.get_current_user), db: AsyncSession = Depends(get_db)):
     return await profile.get_me(db,token["user_id"])
+
+@router.get("/leaderboard",response_model=list[Leaderboard],)
+async def leaderboard(db: AsyncSession = Depends(get_db)):
+    return await UserRepository.get_leaderboard(db)

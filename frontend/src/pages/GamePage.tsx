@@ -48,35 +48,19 @@ export const GamePage: React.FC = () => {
   useEffect(() => {
     // Navigate to final results when game ends
     if (gameState?.isGameEnded) {
-      console.log('Game ended, navigating to final results');
       navigate(`/final/${code}`);
     }
   }, [gameState?.isGameEnded, navigate, code]);
 
   useEffect(() => {
-    console.log('Checking if should show results overlay:', {
-      hasResults: gameState?.roundResults && gameState.roundResults.length > 0,
-      resultsLength: gameState?.roundResults?.length,
-      currentLocationIndex: gameState?.currentLocationIndex,
-      showingResults,
-      lastShownResultRound,
-    });
-
     if (
       gameState?.roundResults &&
       gameState.roundResults.length > 0 &&
       !showingResults
     ) {
       const resultsCount = gameState.roundResults.length;
-      console.log('Latest result count:', resultsCount);
-      console.log('Comparison:', {
-        resultsCount,
-        lastShownResultRound,
-        shouldShow: resultsCount > lastShownResultRound,
-      });
 
       if (resultsCount > lastShownResultRound) {
-        console.log('SHOWING RESULTS OVERLAY!');
         setShowingResults(true);
         setLastShownResultRound(resultsCount);
       }
@@ -88,6 +72,10 @@ export const GamePage: React.FC = () => {
     setGuessLocation(null);
     setMapKey((prev) => prev + 1);
     setRoundEndTriggered(false);
+    // Close results overlay when new round starts, but only if it was shown
+    if (showingResults) {
+      setShowingResults(false);
+    }
   }, [gameState?.currentLocationIndex]);
 
   // Reset roundEndTriggered when results are shown
@@ -157,7 +145,6 @@ export const GamePage: React.FC = () => {
   };
 
   const handleContinueFromResults = () => {
-    console.log('Continuing from results, closing overlay');
     setShowingResults(false);
     // Backend automatically starts next round, no need to call startNextRound here
   };
@@ -175,45 +162,18 @@ export const GamePage: React.FC = () => {
   const allPlayersGuessed =
     gameState.playersGuessed.length === gameState.players.length;
 
-  // Debug logging
-  console.log('GamePage state:', {
-    isHost,
-    allPlayersGuessed,
-    playersGuessed: gameState.playersGuessed,
-    totalPlayers: gameState.players,
-    isGameStarted: gameState.isGameStarted,
-    roundEndTriggered,
-    showingResults,
-  });
-
-  // Auto-end round when all players have guessed (host only)
-  // FIXED: added showingResults to dependencies to prevent double trigger
   useEffect(() => {
-    console.log('useEffect triggered:', { 
-      isHost, 
-      allPlayersGuessed, 
-      isGameStarted: gameState.isGameStarted, 
-      roundEndTriggered,
-      showingResults 
-    });
-
     if (isHost && allPlayersGuessed && gameState.isGameStarted && !roundEndTriggered && !showingResults) {
-      console.log('ALL CONDITIONS MET! Setting timer to auto-end round...');
-      // Wait 2 seconds then automatically end round
       setRoundEndTriggered(true);
       const timer = setTimeout(() => {
-        console.log('Timer fired! Calling endRound via ref');
         endRoundRef.current();
       }, 2000);
 
       return () => {
-        console.log('Cleanup: clearing timer');
         clearTimeout(timer);
       };
     }
   }, [isHost, allPlayersGuessed, gameState.isGameStarted, roundEndTriggered, showingResults]);
-
-  console.log('GamePage render - about to render GuessMap:', { mapKey, guessLocation, hasGuessed });
 
   return (
     <div className="game-page">
@@ -244,35 +204,38 @@ export const GamePage: React.FC = () => {
         </div>
       ))}
 
-      {/* HP bars overlay - top left */}
-      <div className="hp-bars-overlay">
+      {/* HP bars overlay - redesigned */}
+      <div className="hp-panels-container">
         {gameState.players.map((player) => {
-          const playerHp = gameState.hp[player.user_id] || 0;
+          const playerHp = gameState.hp[player.user_id] || gameState.hp[String(player.user_id)] || 0;
           const hpPercentage = (playerHp / 6000) * 100;
           const isCurrentUser = player.user_id === user.user_id;
 
           return (
-            <div key={player.user_id} className={`hp-bar-container ${isCurrentUser ? 'current-user' : ''}`}>
-              <div className="hp-bar-avatar">
+            <div key={player.user_id} className={`hp-panel ${isCurrentUser ? 'hp-panel-left' : 'hp-panel-right'}`}>
+              <div className="hp-panel-avatar">
                 <img
-                  src={player.avatar || '/default-avatar.png'}
+                  src={player.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=667eea&color=fff&size=128&bold=true`}
                   alt={player.name}
-                  className="hp-avatar-image"
+                  className="hp-panel-avatar-img"
                 />
-              </div>
-              <div className="hp-bar-content">
-                <div className="hp-bar-info">
-                  <span className="hp-player-name">{player.name}</span>
-                  <span className="hp-value">{Math.max(0, playerHp)}</span>
+                <div className="hp-panel-rank">
+                  <div className="rank-badge-small">{player.rank}</div>
                 </div>
-                <div className="hp-bar-background">
-                  <div
-                    className="hp-bar-fill"
-                    style={{
-                      width: `${Math.max(0, hpPercentage)}%`,
-                      backgroundColor: hpPercentage > 50 ? '#22c55e' : hpPercentage > 25 ? '#eab308' : '#ef4444'
-                    }}
-                  />
+              </div>
+
+              <div className="hp-panel-content">
+                <div className="hp-panel-name">{player.name}</div>
+                <div className="hp-panel-bar-wrapper">
+                  <div className="hp-panel-bar-bg">
+                    <div
+                      className={`hp-panel-bar-fill ${hpPercentage <= 25 ? 'hp-critical' : hpPercentage <= 50 ? 'hp-warning' : 'hp-healthy'}`}
+                      style={{
+                        width: `${Math.max(0, hpPercentage)}%`
+                      }}
+                    />
+                    <div className="hp-panel-value">{Math.max(0, playerHp)}</div>
+                  </div>
                 </div>
               </div>
             </div>

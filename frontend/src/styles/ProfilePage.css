@@ -260,6 +260,57 @@
   transform: rotate(90deg) scale(0.9);
 }
 
+/* Country Stats section */
+.profile-section--countries {
+  background: linear-gradient(135deg, rgba(50, 150, 100, 0.1), rgba(30, 100, 70, 0.05));
+  border-color: rgba(50, 150, 100, 0.3);
+}
+
+.country-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.country-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(50, 150, 100, 0.3);
+  cursor: default;
+  transition: all 0.2s ease;
+}
+
+.country-stat-item:hover {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(50, 150, 100, 0.5);
+  transform: translateY(-2px);
+}
+
+.country-flag {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.country-stat-values {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.stat-close {
+  color: #4ade80;
+}
+
+.stat-far {
+  color: #f87171;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .profile-page__header {

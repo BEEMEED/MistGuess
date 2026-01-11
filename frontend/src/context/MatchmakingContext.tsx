@@ -113,6 +113,8 @@ export const MatchmakingProvider: React.FC<MatchmakingProviderProps> = ({ childr
   const joinQueue = useCallback(async () => {
     if (!user?.token) {
       console.error('No user token');
+      setState((prev) => ({ ...prev, error: 'Please log in to join matchmaking' }));
+      setTimeout(() => navigate('/'), 2000);
       return;
     }
 

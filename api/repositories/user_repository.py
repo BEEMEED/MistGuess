@@ -63,3 +63,9 @@ class UserRepository:
     async def count_all(db: AsyncSession):
         result = await db.execute(select(func.count(User.id)))
         return result.scalar_one()
+
+    @staticmethod
+    async def get_leaderboard(db: AsyncSession):
+        result = await db.execute(select(User).order_by(User.xp.desc()).limit(10))
+        return result.scalars().all()
+        

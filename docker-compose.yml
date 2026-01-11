@@ -3,8 +3,8 @@ services:
     image: postgres:15
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: mistguess_db
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: geoguessr
     ports:
       - "5432:5432"
     volumes:
@@ -48,7 +48,7 @@ services:
     env_file:
       - ./api/.env
     environment:
-      SQLALCHEMY_DATABASE_URL: postgresql+asyncpg://postgres:123@db:5432/mistguess_db
+      SQLALCHEMY_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/geoguessr
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
     ports:

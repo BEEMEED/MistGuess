@@ -2,7 +2,7 @@ from fastapi import FastAPI, requests
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from routers.authorization_router import router as auth
-from routers.lobby_router import router as lobby
+from routers.lobby_router import router as lobby_router
 from routers.websocket_router import router as websocket
 from routers.profile_router import router as profile
 from routers.admin_router import router as admin
@@ -13,6 +13,9 @@ from services.matchmaking_service import matchmaking_instance
 from database.database import engine
 from database.base import Base
 import asyncio
+from models.user import User
+from models.locations import Locations
+from models.lobby import Lobby
 
 logging.basicConfig(
     level=logging.INFO,
@@ -60,7 +63,7 @@ app.include_router(telegram, prefix="/telegram", tags=["telegram"])
 app.include_router(matchmaking, prefix="/matchmaking", tags=["matchmaking"])
 app.include_router(admin, prefix="/admin", tags=["admin"])
 app.include_router(auth, prefix="/auth", tags=["auth"])
-app.include_router(lobby, prefix="/lobbies", tags=["lobbies"])
+app.include_router(lobby_router, prefix="/lobbies", tags=["lobbies"])
 app.include_router(websocket, tags=["ws"])
 app.include_router(profile, prefix="/profile", tags=["profile"])
 

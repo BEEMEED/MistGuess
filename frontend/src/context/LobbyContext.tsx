@@ -99,6 +99,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
                 playersGuessed: [],
                 roundTimer: event.timer,
                 roundStartTime: event.RoundStartTime || Date.now(),
+                hp: prev.hp || {},
               }
             : null;
           console.log('New state after round_started:', newState);

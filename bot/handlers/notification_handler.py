@@ -17,7 +17,8 @@ async def on_message(message):
             await bot.send_message(chat_id=telegram_id, text=text)
 
 async def start_consum():
-    connection = await connect_robust("amqp://localhost/")
+    rabbitmq_host = "rabbitmq" 
+    connection = await connect_robust(f"amqp://{rabbitmq_host}/")
     channel = await connection.channel()
     queue = await channel.declare_queue("telegram_notification", durable=True)
     await queue.consume(on_message)
@@ -42,7 +43,7 @@ async def verify(msg: Message, command: CommandObject):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    "http://127.0.0.1:8000/telegram/auth/callback",
+                    "http://api:8000/telegram/auth/callback",
                     json={"telegramID": str(telegram_id), "code": str(code)},
                 ) as response:
                     if response.status == 200:

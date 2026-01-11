@@ -70,3 +70,4 @@ Thumbs.db
 # Static uploads (keep folder structure)
 static/avatars/
 !static/.gitkeep
+api/static/

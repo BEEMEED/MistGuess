@@ -2,6 +2,8 @@ from fastapi import WebSocket, APIRouter, Depends, HTTPException, Body
 from utils.LocationService import LocationService
 from services.authorization import AuthService
 import json
+from sqlalchemy import select
+from models.user import User
 from starlette.websockets import WebSocketDisconnect
 import logging
 import asyncio
@@ -109,7 +111,7 @@ class Websocket_service:
         self.connections[InviteCode].append((user_id, websocket))
 
         assert lobby
-        players_info = [self.user_GetInfo(db, uid) for uid in lobby.users]
+        players_info = [await self.user_GetInfo(db, uid) for uid in lobby.users]
 
         message = {
             "type": "player_joined",
@@ -274,7 +276,7 @@ class Websocket_service:
         locations_list = game["locations"]
         current_index = game["current_location_index"]
 
-        guesses = game.get("guesses", {}).get(current_index, [])
+        guesses = game.get("guesses", {}).get(str(current_index), [])
         num_guesses = len(guesses)
 
         if num_guesses < 2:
@@ -334,6 +336,15 @@ class Websocket_service:
 
         damage = winner_guess["points"] - loser_guess["points"]
         loser_id = loser_guess["player"]
+
+        if loser_id not in game["hp"]:
+            lobby = await LobbyRepository.get_by_code(db, InviteCode)
+            if lobby:
+                game["hp"] = {player_id: 6000 for player_id in lobby.users}
+            else:
+                logger.error(f"Lobby {InviteCode} not found during HP reinit")
+                return
+
         game["hp"][loser_id] -= damage
 
         if game["hp"][loser_id] <= 0:
@@ -387,8 +398,8 @@ class Websocket_service:
         if not game:
             return
 
+        # --- сalculate total distances ---
         all_guesses = game["guesses"]
-
         total_distances = {}
         for round_num, guesses in all_guesses.items():
             for guess in guesses:
@@ -397,22 +408,22 @@ class Websocket_service:
                     total_distances[player] = 0
                 total_distances[player] += guess["distance"]
 
-        winner_id = max(
-            game["hp"], key=lambda x: game["hp"][x]
-        )
+        # --- вetermine winner ---
+        winner_id = max(game["hp"], key=lambda x: game["hp"][x])
 
+        # --- players info ---
         players = []
         for user_id, _ in self.connections[InviteCode]:
             info = await self.user_GetInfo(db, user_id)
             players.append(info)
 
+        # --- send game ended message ---
         message = {
             "type": "game_ended",
             "winner": winner_id,
             "total_distances": total_distances,
             "players": players,
         }
-
         if InviteCode in self.connections:
             for _, ws in self.connections[InviteCode]:
                 try:
@@ -420,10 +431,9 @@ class Websocket_service:
                 except Exception as e:
                     logger.error(f"Failed to send game_ended to connection: {e}")
 
+        # --- xp rewards ---
         player_ids = [login for login, _ in self.connections[InviteCode]]
 
-        from sqlalchemy import select
-        from models.user import User
 
         result = await db.execute(select(User).where(User.id.in_(player_ids)))
         users = {user.id: user for user in result.scalars().all()}
@@ -434,26 +444,27 @@ class Websocket_service:
             if user_id in users:
                 users[user_id].xp += 10
 
-        if winner_id and winner_id.id in users:
-            users[winner_id.id].xp += 50
+        if winner_id and winner_id in users:
+            users[winner_id].xp += 50
 
         await db.commit()
+
+        # --- rank up check ---
         await self.user_rank_up(db, player_ids)
 
         for user in users.values():
             await db.refresh(user)
         new_ranks = {user_id: users[user_id].rank for user_id in player_ids if user_id in users}
 
+        # --- send rank_up notifications ---
         rank_ups = []
         for user_id in player_ids:
             if old_ranks.get(user_id) != new_ranks.get(user_id):
-                rank_ups.append(
-                    {
-                        "user_id": user_id,
-                        "old_rank": old_ranks[user_id],
-                        "new_rank": new_ranks[user_id],
-                    }
-                )
+                rank_ups.append({
+                    "user_id": user_id,
+                    "old_rank": old_ranks[user_id],
+                    "new_rank": new_ranks[user_id],
+                })
 
         if rank_ups and InviteCode in self.connections:
             message_rank = {"type": "rank_up", "rank_ups": rank_ups}
@@ -463,10 +474,40 @@ class Websocket_service:
                 except Exception as e:
                     logger.error(f"Failed to send rank_up to connection: {e}")
 
+        # --- close/far countries ---
+
+        locations = game["locations"]
+        for round_num, guesses in all_guesses.items():
+            round_id = int(round_num)
+            if round_id >= len(locations):
+                continue
+
+            for guess in guesses:
+                player_id = guess["player"]
+                distance = guess["distance"]
+                country = guess.get("country")
+
+                if not country or player_id not in users:
+                    continue
+
+                user = users[player_id]
+                stats = dict(user.country_stats)
+
+                if country not in stats:
+                    stats[country] = {"close": 0, "far": 0}
+
+                if distance <= 500:
+                    stats[country]["close"] += 1
+                elif distance > 2000:
+                    stats[country]["far"] += 1
+
+                user.country_stats = stats
+                await db.commit()
+        
+
+        # --- cleanup ---
         await asyncio.sleep(0.5)
-
         await r.delete(f"game:{InviteCode}")
-
         await LobbyRepository.delete(db, InviteCode)
 
         logger.info(f"Game ended for {InviteCode}")
@@ -482,13 +523,14 @@ class Websocket_service:
             return
 
         current_index = game["current_location_index"]
+        current_index_str = str(current_index)
 
-        if current_index not in game["guesses"]:
-            game["guesses"][current_index] = []
+        if current_index_str not in game["guesses"]:
+            game["guesses"][current_index_str] = []
 
         existing_guess = any(
             g["player"] == user_id
-            for g in game["guesses"][current_index]
+            for g in game["guesses"][current_index_str]
         )
         if existing_guess:
             logger.warning(
@@ -503,8 +545,8 @@ class Websocket_service:
 
         distance = locat.haversine_m(lat, lon, lat_cur, lon_cur)
 
-        game["guesses"][current_index].append(
-            {"player": user_id, "distance": distance, "lat": lat, "lon": lon}
+        game["guesses"][current_index_str].append(
+            {"player": user_id, "distance": distance, "lat": lat, "lon": lon, "country": current_location["country"]}
         )
         await r.setex(f"game:{lobbycode}", 3600, json.dumps(game))
 
@@ -516,7 +558,7 @@ class Websocket_service:
                 except Exception as e:
                     logger.error(f"Failed to send player_guessed to connection: {e}")
 
-        guesses_count = len(game["guesses"][current_index])
+        guesses_count = len(game["guesses"][current_index_str])
         logger.info(f"Guesses: {guesses_count}/2 for {lobbycode}")
 
         if guesses_count == 2:
@@ -559,6 +601,7 @@ class Websocket_service:
         game = await self._get_game(inviteCode)
         if game:
             current_index = game["current_location_index"]
+            current_index_str = str(current_index)
             current_location = game["locations"][current_index]
 
             message["game_state"] = {
@@ -573,15 +616,15 @@ class Websocket_service:
                 "hp": game["hp"],
             }
 
-            if current_index in game["guesses"]:
+            if current_index_str in game["guesses"]:
                 player_has_guessed = any(
                     g["player"] == user_id
-                    for g in game["guesses"][current_index]
+                    for g in game["guesses"][current_index_str]
                 )
                 message["game_state"]["PlayerHasGuessed"] = player_has_guessed
                 message["game_state"]["player_guess"] = [
                     g["player"]
-                    for g in game["guesses"][current_index]
+                    for g in game["guesses"][current_index_str]
                 ]
 
         message["players"] = []

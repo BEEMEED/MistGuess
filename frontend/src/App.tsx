@@ -14,6 +14,7 @@ import { AdminPage } from './pages/AdminPage';
 import { AddLocationPage } from './pages/AddLocationPage';
 import { MatchmakingPage } from './pages/MatchmakingPage';
 import { GuidePage } from './pages/GuidePage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/add-location" element={<AddLocationPage />} />
               <Route path="/guide" element={<GuidePage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/matchmaking" element={<MatchmakingPage />} />
               <Route path="/lobby/:code" element={<LobbyPage />} />
               <Route path="/game/:code" element={<GamePage />} />

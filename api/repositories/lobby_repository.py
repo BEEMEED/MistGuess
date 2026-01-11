@@ -11,7 +11,7 @@ class LobbyRepository:
     async def create(db: AsyncSession,host_id:int):
         InviteCode = secrets.token_urlsafe(6)
         locations_objs = await LocationRepository.get_random_location(db, 13)
-        locations = [{"lat": loc.lat, "lon": loc.lon, "region": loc.region, "url": f"https://www.google.com/maps/@{loc.lat},{loc.lon},17z"} for loc in locations_objs]
+        locations = [{"lat": loc.lat, "lon": loc.lon, "region": loc.region, "url": f"https://www.google.com/maps/@{loc.lat},{loc.lon},17z","country": loc.country} for loc in locations_objs]
         lobby = Lobby(invite_code=InviteCode, host_id=host_id, locations=locations,timer=TIMER,users=[host_id])
 
         db.add(lobby)

@@ -160,6 +160,7 @@ class APIService {
     xp: number;
     rank: string;
     role: string;
+    country_stats: Record<string, { close: number; far: number }>;
     lobbys?: Array<{
       InviteCode: string;
       ingame: boolean;

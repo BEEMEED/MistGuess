@@ -6,6 +6,94 @@
   position: relative;
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
   overflow: hidden;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+/* Player Profile Card */
+.player-profile-card {
+  position: relative;
+  z-index: 10;
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.profile-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+}
+
+.profile-card-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+}
+
+.profile-card-xp {
+  font-size: 16px;
+  color: var(--text-gold);
+  font-weight: 600;
+}
+
+.profile-card-countries {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(205, 127, 50, 0.2);
+}
+
+.country-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(205, 127, 50, 0.2);
+  transition: all 0.3s ease;
+  cursor: help;
+}
+
+.country-item:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(205, 127, 50, 0.5);
+  transform: scale(1.05);
+}
+
+.country-item.favorite {
+  border-color: rgba(76, 222, 128, 0.3);
+}
+
+.country-item.favorite:hover {
+  border-color: rgba(76, 222, 128, 0.6);
+}
+
+.country-item.disliked {
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.country-item.disliked:hover {
+  border-color: rgba(248, 113, 113, 0.6);
+}
+
+.country-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.country-flag {
+  font-size: 28px;
+  line-height: 1;
+  margin-left: auto;
 }
 
 .matchmaking-container {

@@ -12,13 +12,21 @@ import { EditAvatarOverlay } from '../components/profile/EditAvatarOverlay';
 import { TelegramLinkOverlay } from '../components/profile/TelegramLinkOverlay';
 import { FogOverlay } from '../components/effects/FogOverlay';
 import { AshParticles } from '../components/effects/AshParticles';
+import { getFlagEmoji, getCountryName } from '../services/flags';
 import '../styles/ProfilePage.css';
 
 export const ProfilePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [profile, setProfile] = useState<{ name: string; avatar: string; xp: number; rank: string; telegram?: string } | null>(null);
+  const [profile, setProfile] = useState<{
+    name: string;
+    avatar: string;
+    xp: number;
+    rank: string;
+    telegram?: string;
+    country_stats?: Record<string, { close: number; far: number }>;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -221,6 +229,24 @@ export const ProfilePage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Country Stats section */}
+            {profile.country_stats && Object.keys(profile.country_stats).length > 0 && (
+              <div className="profile-section profile-section--countries">
+                <h2 className="profile-section__label">Country Stats</h2>
+                <div className="country-stats-grid">
+                  {Object.entries(profile.country_stats).map(([code, stats]) => (
+                    <div key={code} className="country-stat-item" title={getCountryName(code)}>
+                      <span className="country-flag">{getFlagEmoji(code)}</span>
+                      <div className="country-stat-values">
+                        <span className="stat-close">{stats.close} close</span>
+                        <span className="stat-far">{stats.far} far</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </MistbornCard>
       </div>
