@@ -17,3 +17,6 @@ pytest-asyncio==0.24.0
 httpx==0.28.1
 redis==5.0.1
 aiofiles==24.1.0
+sentry-sdk[fastapi]==2.49.0
+prometheus-client==0.23.1
+prometheus-fastapi-instrumentator==7.1.0

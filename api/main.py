@@ -16,6 +16,7 @@ import asyncio
 from models.user import User
 from models.locations import Locations
 from models.lobby import Lobby
+from core.monitoring import init_sentry
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,8 +26,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-
+init_sentry()
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -42,10 +44,27 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            logger.info("database connected")
+            break
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.warning(
+                    f"database not ready (attempt {attempt + 1}/{max_retries}), retrying"
+                )
+                await asyncio.sleep(2)
+            else:
+                logger.error(
+                    f"failed to connect to database after {max_retries} attempts"
+                )
+                raise
+
     logger.info("Matchmaking queue started")
     asyncio.create_task(matchmaking_instance.matchmaking_loop())
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 
 @app.get("/")
@@ -58,6 +77,11 @@ async def health():
     return {"status": "healthy"}
 
 
+@app.get("/sentry-debug")
+async def trigger_error():
+    division_by_zero = 1 / 0
+
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(telegram, prefix="/telegram", tags=["telegram"])
 app.include_router(matchmaking, prefix="/matchmaking", tags=["matchmaking"])
@@ -66,6 +90,13 @@ app.include_router(auth, prefix="/auth", tags=["auth"])
 app.include_router(lobby_router, prefix="/lobbies", tags=["lobbies"])
 app.include_router(websocket, tags=["ws"])
 app.include_router(profile, prefix="/profile", tags=["profile"])
+
+
+# prometheus
+
+from prometheus_fastapi_instrumentator import Instrumentator
+
+Instrumentator().instrument(app).expose(app)
 
 
 if __name__ == "__main__":

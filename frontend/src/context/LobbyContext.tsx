@@ -187,17 +187,26 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
         break;
 
       case 'broadcast':
-        setGameState((prevState) => {
-          const playerName = prevState?.players.find((p) => p.user_id === event.player)?.name || `User${event.player}`;
-          setChatMessages((prev) => [
-            ...prev,
-            {
-              player: playerName,
-              message: event.message,
-              timestamp: Date.now(),
-            },
-          ]);
-          return prevState;
+        setChatMessages((prev) => {
+          const newMessage = {
+            player: event.player,
+            message: event.message,
+            timestamp: Date.now(),
+          };
+
+          // Предотвратить дубликаты (если то же сообщение от того же игрока в течение 1 секунды)
+          const isDuplicate = prev.some(
+            (msg) =>
+              msg.player === newMessage.player &&
+              msg.message === newMessage.message &&
+              Date.now() - msg.timestamp < 1000
+          );
+
+          if (isDuplicate) {
+            return prev;
+          }
+
+          return [...prev, newMessage];
         });
         break;
 

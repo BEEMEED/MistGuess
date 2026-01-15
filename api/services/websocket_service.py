@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from repositories.user_repository import UserRepository
 from repositories.lobby_repository import LobbyRepository
 from repositories.location_repository import LocationRepository
+from core.metrics import active_websockets
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,8 @@ class Websocket_service:
         if InviteCode not in self.connections:
             self.connections[InviteCode] = []
         self.connections[InviteCode].append((user_id, websocket))
+        active_websockets.inc()
+
 
         assert lobby
         players_info = [await self.user_GetInfo(db, uid) for uid in lobby.users]
@@ -153,6 +156,7 @@ class Websocket_service:
             if lobby:
                 await LobbyRepository.delete(db, InviteCode)
             return
+        active_websockets.dec()
 
         players = []
         for user_id, _ in self.connections[InviteCode]:

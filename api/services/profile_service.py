@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from repositories.user_repository import UserRepository
 from repositories.lobby_repository import LobbyRepository
 from repositories.location_repository import LocationRepository
+import aiofiles
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,6 @@ class Profile:
 
         file_path = UPLOAD_DIR / f"{user_id}{file_ext}"
 
-        import aiofiles
         async with aiofiles.open(file_path, "wb") as f:
             await f.write(content)
 

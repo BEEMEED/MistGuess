@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from utils.dependencies import Dependies
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
+from utils.rate_limiter import rate_limit
 
 dependies = Dependies()
 router = APIRouter()
@@ -16,6 +17,7 @@ class telegramlinkrequest(BaseModel):
 
 
 @router.post("/auth")
+@rate_limit(max_requests=5, seconds=60)
 async def LinkTelegram(token: dict = Depends(dependies.get_current_user)):
     return telega.generate_code(token["user_id"])
 

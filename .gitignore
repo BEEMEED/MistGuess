@@ -71,4 +71,3 @@ Thumbs.db
 static/avatars/
 !static/.gitkeep
 api/static/
-api/create_tables.py

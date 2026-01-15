@@ -8,17 +8,12 @@ load_dotenv()
 class Config:
     BASE_DIR = Path(__file__).resolve().parent
 
-    SECRET_KEY = os.getenv("SECRET_KEY", "change-this-secret-key-in-production")
+    SECRET_KEY = os.getenv("SECRET_KEY")
     ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
     CLIENT_ID = os.getenv("CLIENT_ID")
     CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-    REDIRECT_URI = os.getenv(
-        "REDIRECT_URI", "http://localhost:5173/auth/google/callback"
-    )
-    DATABASE_URL: str = os.getenv("SQLALCHEMY_DATABASE_URL") or ""
-    if not DATABASE_URL:
-        raise ValueError("set SQLALCHEMY_DATABASE_URL in env")
+    REDIRECT_URI = os.getenv("REDIRECT_URI")
 
     TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
@@ -34,5 +29,6 @@ class Config:
         (6500, "Lord Mistborn"),
     ]
 
+    DSN = os.getenv("DSN")
 
 config = Config()

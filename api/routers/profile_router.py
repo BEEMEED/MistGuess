@@ -6,6 +6,9 @@ from utils.dependencies import Dependies
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from repositories.user_repository import UserRepository
+from cache.redis import r
+import json
+from utils.rate_limiter import rate_limit
 
 dependies = Dependies()
 router = APIRouter()
@@ -31,6 +34,7 @@ async def avatar_edit(
 
 
 @router.get("/avatar")
+@rate_limit(max_requests=3, seconds=60)
 async def avatar_get(token: dict = Depends(dependies.get_current_user),db: AsyncSession = Depends(get_db)):
     return await profile.get_avatar(db,token["user_id"])
 
@@ -41,4 +45,11 @@ async def me(token: dict = Depends(dependies.get_current_user), db: AsyncSession
 
 @router.get("/leaderboard",response_model=list[Leaderboard],)
 async def leaderboard(db: AsyncSession = Depends(get_db)):
-    return await UserRepository.get_leaderboard(db)
+    cached = await r.get("leaderboard:top5")
+    if cached:
+        return json.loads(cached)
+    
+    users = await UserRepository.get_leaderboard(db)
+    await r.setex("leaderboard:top5", 300, json.dumps(users))
+
+    return users

@@ -28,6 +28,7 @@ the platform features skill based matchmaking, XP progression with ranks, and re
 - **RabbitMQ** - message queue for notifications
 - **WebSockets** -  communication
 - **Pydantic** - validation
+- **Alembic** - database migrations
 
 ### bot
 - **aiogram 3.x** - telegram bot framework
@@ -40,6 +41,12 @@ the platform features skill based matchmaking, XP progression with ranks, and re
 
 ### infrastructure
 - **Docker & Docker Compose** - containerization
+
+### monitoring
+- **Sentry** - error tracking
+- **Rate Limiting** - redis based request throttling
+
+
 
 ## setup
 
@@ -59,54 +66,66 @@ cp api/.env.example api/.env
    - create OAuth 2.0 credentials
    - add redirect url: `http://localhost:5173/auth/google/callback`
 
-4. configure telegram bot (optional):
-   - message @BotFather in telegram
-   - send `/newbot` and follow instructions
-   - copy bot token to `.env` as `TELEGRAM_TOKEN`
+4. **configure telegram bot (optional):**
+   - Message [@BotFather](https://t.me/BotFather) in Telegram
+   - Send `/newbot` and follow instructions
+   - Copy bot token to `.env` as `TELEGRAM_TOKEN`
 
-### run with Docker
+5. **configure sentry (optional):**
+   - sign up at [sentry.io](https://sentry.io)
+   - create new project (python/fastapi)
+   - copy dsn to `.env` as `DSN`
+
+### run with docker
 
 ```bash
 docker-compose up --build
 ```
-
-
 
 ## structure
 
 ```
 mistguess/
 ├── api/
+│   ├── alembic/                  # database migrations
+│   │   └── versions/             # migration files
+│   ├── core/                     # core functionality
+│   │   └── monitoring.py         # sentry configuration
 │   ├── models/                   # sqlalchemy models
-│   │   ├── user.py               
-│   │   ├── lobby.py             
-│   │   └── locations.py         
+│   │   ├── user.py               # user model with XP/ranks
+│   │   ├── lobby.py              # lobby/game model
+│   │   └── locations.py          # game locations
 │   ├── routers/                  # api endpoints
-│   │   ├── authorization_router.py  # google OAuth
-│   │   ├── lobby_router.py          # lobby
-│   │   ├── websocket_router.py      # game WebSocket
+│   │   ├── authorization_router.py  # google OAuth, jwt
+│   │   ├── lobby_router.py          # lobby crud
+│   │   ├── websocket_router.py      # game websocket
 │   │   ├── matchmaking_router.py    # matchmaking queue
 │   │   ├── profile_router.py        # user profiles
-│   │   └── admin_router.py          # admin endpoints
+│   │   ├── telegram.py              # telegram integration
+│   │   └── admin_router.py          # admin panel
 │   ├── services/                 # logic
 │   │   ├── websocket_service.py     # game state
 │   │   ├── matchmaking_service.py   # queue and matching
-│   │   └── authorization.py         # jwt, OAuth
-│   ├── repositories/             # db access layer
+│   │   └── authorization.py         # jwt, OAuth handlers
+│   ├── repositories/             # database access layer
 │   │   ├── user_repository.py
 │   │   ├── lobby_repository.py
 │   │   └── location_repository.py
+│   ├── utils/                    # utilities
+│   │   ├── rate_limiter.py          # rate limiting decorator
+│   │   └── dependencies.py          # fastapi dependencies
 │   ├── cache/                    # redis client
-│   ├── database/                 # sqlalchemy config
-│   ├── tests/                    # pytest tests
-│   ├── dockerfile               # api container
+│   ├── database/                 # database configuration
+│   ├── tests/                    # tests
+│   ├── Dockerfile                # api container
+│   ├── alembic.ini               # alembic configuration
 │   └── main.py                   # api entrypoint
 ├── bot/
-│   ├── handlers/                # telegram handlers
+│   ├── handlers/                 # telegram handlers
 │   │   └── notification_handler.py
-│   ├── main.py                  # bot entrypoint
+│   ├── main.py                   # bot entrypoint
 │   └── Dockerfile
-└── docker-compose.yml
+└── docker-compose.yml            # service orchestration
 ```
 
 ## License
