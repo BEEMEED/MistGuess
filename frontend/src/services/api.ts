@@ -124,7 +124,7 @@ class APIService {
 
   // Google OAuth endpoints
   public async getGoogleAuthUrl(): Promise<string> {
-    const response = await this.client.post<{ auth_url: string }>('/auth/google');
+    const response = await this.client.get<{ auth_url: string }>('/auth/google');
     return response.data.auth_url;
   }
 
@@ -195,6 +195,18 @@ class APIService {
     return response.data;
   }
 
+  public async getLeaderboard(): Promise<Array<{
+    id: number;
+    username: string;
+    name: string;
+    xp: number;
+    rank: string;
+    avatar: string;
+  }>> {
+    const response = await this.client.get('/profile/leaderboard');
+    return response.data;
+  }
+
   // Admin endpoints
 
   public async getAdminPanel(page: number = 1, limit: number = 20): Promise<{
@@ -246,7 +258,7 @@ class APIService {
   // Telegram endpoints
 
   public async getTelegramLinkCode(): Promise<{ code: string; user_id: number }> {
-    const response = await this.client.post<{ code: string; user_id: number }>('/telegram/auth');
+    const response = await this.client.get<{ code: string; user_id: number }>('/auth/telegram');
     return response.data;
   }
 

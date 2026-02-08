@@ -23,7 +23,7 @@ class Profile:
     @staticmethod
     async def NameEdit(db: AsyncSession, user_id: int, NewName: str):
         
-        await UserRepository.update(db,user_id,name=NewName)
+        await UserRepository.update(db, user_id, {"name": NewName})
         
         logger.info(f"User {user_id} changed name to {NewName}")
 
@@ -47,7 +47,7 @@ class Profile:
             await f.write(content)
 
         avatar_url = f"static/avatars/{user_id}{file_ext}"
-        await UserRepository.update(db, user_id, avatar=avatar_url)
+        await UserRepository.update(db, user_id, {"avatar": avatar_url})
 
         logger.info(f"User {user_id} changed avatar")
         return {"avatar": avatar_url}

@@ -1,6 +1,6 @@
 from services.websocket_service import ws_service
 from fastapi import APIRouter, WebSocket, HTTPException, WebSocketDisconnect, Depends
-from services.authorization import AuthService
+from utils.token_manager import TokenManager
 import asyncio
 import time
 import logging
@@ -10,7 +10,7 @@ from services.authorization import AuthService
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
-auth = AuthService()
+
 dependies = Dependies()
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -37,7 +37,7 @@ async def GameStart(
                 await websocket.close(code=1008, reason="Lobby not found")
                 return
 
-            token_data = await auth.verifyToken(db, token)
+            token_data = await TokenManager.verifyToken(db, token)
             user_id = token_data["user_id"]
 
             await ws_service.player_joined(db, user_id, lobby_code, websocket)

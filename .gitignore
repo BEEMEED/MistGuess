@@ -1,19 +1,13 @@
-# Environment files
 .env
 .env.local
 *.env
-
-# Logs
 *.log
 logs/
-
-# Node
 node_modules/
 dist/
 dist-ssr/
 *.local
-
-# Python
+nul
 __pycache__/
 *.py[cod]
 *$py.class
@@ -38,18 +32,12 @@ venv/
 ENV/
 env/
 .pytest_cache/
-
-# Database files
 *.db
 *.sqlite
 *.sqlite3
-
-# Docker volumes
 db_data/
 redis_data/
 rabbitmq_data/
-
-# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea/
@@ -62,12 +50,8 @@ rabbitmq_data/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Static uploads (keep folder structure)
 static/avatars/
 !static/.gitkeep
 api/static/

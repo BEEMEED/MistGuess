@@ -22,7 +22,7 @@ class telegramAuth:
             raise HTTPException(status_code=400, detail="Invalid code")
         user_id = self.code[code]
 
-        await UserRepository.update(db,user_id=user_id,telegram=telegramID)
+        await UserRepository.update(db, user_id, {"telegram": telegramID})
         del self.code[code]
 
         return {"success": True, "user_id": user_id}

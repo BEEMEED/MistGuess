@@ -1,7 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
-from sqlalchemy.orm import relationship, Mapped,mapped_column
+from sqlalchemy import JSON
+from sqlalchemy.orm import Mapped, mapped_column
 from database.base import Base
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
 class Lobby(Base):
     __tablename__ = "lobby"
@@ -10,6 +9,9 @@ class Lobby(Base):
     invite_code: Mapped[str] = mapped_column(unique=True, nullable=False)
     host_id: Mapped[int] = mapped_column( nullable=False)
     timer: Mapped[int] = mapped_column(nullable=False,default=240)
-    users: Mapped[list] = mapped_column(ARRAY(Integer), default=[])
-    locations: Mapped[list] = mapped_column(JSONB, nullable=False)
+    users: Mapped[list] = mapped_column(JSON, default=[])
+    locations: Mapped[list] = mapped_column(JSON, nullable=False)
+
+    mode: Mapped[str] = mapped_column(default=None)
+    war_id: Mapped[int] = mapped_column(default=None)
 

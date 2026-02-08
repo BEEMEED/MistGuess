@@ -6,7 +6,8 @@ from routers.lobby_router import router as lobby_router
 from routers.websocket_router import router as websocket
 from routers.profile_router import router as profile
 from routers.admin_router import router as admin
-from routers.telegram import router as telegram
+from routers.telegram_router import router as telegram
+from routers.clans_router import router as clans
 from routers.matchmaking_router import router as matchmaking
 import logging
 from services.matchmaking_service import matchmaking_instance
@@ -85,6 +86,7 @@ async def trigger_error():
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(telegram, prefix="/telegram", tags=["telegram"])
 app.include_router(matchmaking, prefix="/matchmaking", tags=["matchmaking"])
+app.include_router(clans, prefix="/clan", tags=["clan"])
 app.include_router(admin, prefix="/admin", tags=["admin"])
 app.include_router(auth, prefix="/auth", tags=["auth"])
 app.include_router(lobby_router, prefix="/lobbies", tags=["lobbies"])

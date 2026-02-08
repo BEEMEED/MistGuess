@@ -1,5 +1,5 @@
 from config import config
-from fastapi import HTTPException, UploadFile, File, Body, Request, Depends
+from fastapi import HTTPException, UploadFile, File, Body, Request, Depends, Header
 import logging
 
 logger = logging.getLogger(__name__)
@@ -62,9 +62,24 @@ class Dependies:
                 raise HTTPException(401, "invalid token")
 
             role = user.role
-            return {"user_id": user.id, "role": role}
+            return user
         except HTTPException:
             raise
         except Exception as e:
             logger.error(f"Token validation error: {str(e)}")
             raise HTTPException(401, "invalid token")
+
+    @staticmethod
+    async def verify_bot_secret(bot_secret: str = Header(None)):
+        expected_secret = config.BOT_SECRET
+
+        if not expected_secret:
+            raise HTTPException(status_code=500, detail="Bot secret not configured")
+        
+        if not bot_secret:
+            raise HTTPException(status_code=403, detail="Bot secret header required")
+        
+        if bot_secret != expected_secret:
+            raise HTTPException(status_code=403, detail="Invalid bot secret")
+        
+        return True

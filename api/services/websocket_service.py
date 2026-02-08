@@ -1,6 +1,5 @@
 from fastapi import WebSocket, APIRouter, Depends, HTTPException, Body
 from utils.LocationService import LocationService
-from services.authorization import AuthService
 import json
 from sqlalchemy import select
 from models.user import User
@@ -16,11 +15,11 @@ from repositories.user_repository import UserRepository
 from repositories.lobby_repository import LobbyRepository
 from repositories.location_repository import LocationRepository
 from core.metrics import active_websockets
+from services.clan_service import ClanWarService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-auth = AuthService()
 locat = LocationService()
 
 
@@ -194,12 +193,39 @@ class Websocket_service:
                 logger.warning(f"Failed to send broadcast to user: {e}")
         logger.info(f"{user.name} sent message {message} to {InviteCode}")
 
-    async def GameStart(self, db: AsyncSession, InviteCode: str):
+    async def GameStart(self, db: AsyncSession, InviteCode: str, mode: str | None = None, war_id: int | None = None, user_id: int | None = None, player_id: int | None = None):
+        # -- FOR WARS --
+        
         lobby = await LobbyRepository.get_by_code(db, InviteCode)
         if not lobby:
             raise HTTPException(status_code=404, detail="InviteCode not found")
 
-        game = await self._get_game(InviteCode)
+        if mode == "clan_wars":
+            game = {
+                "mode": "clan_wars",
+                "war_id": war_id,
+                "user_id": user_id,
+                "locations": lobby.locations,
+                "current_location_index": 0,
+                "guesses": {},
+                "total_score": 0
+            }
+            await r.setex(f"game:{InviteCode}", 3600, json.dumps(game))
+
+            message = {
+                "type": "game_started", "mode": "clan_war", "timer": 120
+            }
+            
+            for _, ws in self.connections[InviteCode]:
+                
+                try:
+                    await ws.send_json(message)
+                
+                except Exception as e:
+                    logger.error(f"Failed to send game_started to connection: {e}")
+            
+            logger.info(f"war game started for {InviteCode}")
+            return
 
 
         game = {
@@ -282,7 +308,41 @@ class Websocket_service:
 
         guesses = game.get("guesses", {}).get(str(current_index), [])
         num_guesses = len(guesses)
+        
+        # --- FOR WARS ---
+        if game.get("mode") == "clan_war":
+            if num_guesses == 1:
+                guess = guesses[0]
+                points = await locat.calculate_points(guess["distance"])
+                guess["points"] = points
+                game["total_score"] = game.get("total_score",0) + points
+            if "ended_rounds" not in game:
+                game["ended_rounds"] = []
+            game["ended_rounds"].append(current_index)
+            game["current_location_index"] += 1
+        
+            if game["current_location_index"] >= len(locations_list):
+                await r.setex(f"game:{InviteCode}", 3600, json.dumps(game))
+                await self.clan_war_ended(db,InviteCode)
+                return
+            await r.setex(f"game:{InviteCode}", 3600, json.dumps(game))
 
+            message = {
+                "type": "round_ended",
+                "total_score": game.get("total_score",0),
+                "round": current_index,
+            }
+            if InviteCode in self.connections:
+                for _, ws in self.connections[InviteCode]:
+                    try:
+                        await ws.send_json(message)
+                    except Exception as e:
+                        logger.error(f"Failed to send round_ended to connection: {e}")
+            await asyncio.sleep(5)
+            await self.RoundStarted(db, InviteCode)
+            return
+
+        # --- FOR NORMAL GAME ---
         if num_guesses < 2:
             if num_guesses == 0:
                 for player_id in game["hp"]:
@@ -393,7 +453,7 @@ class Websocket_service:
                     new_rank = rank
                     break
             if user.rank != new_rank:
-                await UserRepository.update(db, user_id, rank=new_rank)
+                await UserRepository.update(db, user_id, {"rank": new_rank})
 
         logger.info(f"Ranks updated for {players}")
 
@@ -565,7 +625,7 @@ class Websocket_service:
         guesses_count = len(game["guesses"][current_index_str])
         logger.info(f"Guesses: {guesses_count}/2 for {lobbycode}")
 
-        if guesses_count == 2:
+        if guesses_count >= (1 if game.get("mode") == "clan_war" else 2):
             logger.info(f"All players guessed! Ending round for {lobbycode}")
             await self.RoundEnded(db, lobbycode)
         
@@ -648,6 +708,17 @@ class Websocket_service:
                     logger.error(f"Failed to send player_reconnected to {login_p}: {e}")
 
         logger.info(f"Player {user_id} reconnected to {inviteCode}")
+    
+    async def clan_war_ended(self, db: AsyncSession, lobbycode: str):
+        game = await self._get_game(lobbycode)
+        if not game:
+            return
+        war_id = game["war_id"]
+        user_id = game["user_id"]
+        total_score = game.get("total_score",0)
+
+        await ClanWarService.submit_score(db, war_id, user_id, total_score)
+        await r.delete(f"game:{lobbycode}")
 
 
 ws_service = Websocket_service()

@@ -2,7 +2,7 @@
 
 export interface LoginResponse {
   user_id: number;
-  token: string;
+  access_token: string;
 }
 
 export interface CreateLobbyRequest {

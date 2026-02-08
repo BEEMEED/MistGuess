@@ -46,7 +46,7 @@ services:
     volumes:
       - ./api:/app
     env_file:
-      - ./api/.env
+      - .env
     environment:
       SQLALCHEMY_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/geoguessr
       REDIS_URL: redis://redis:6379
@@ -79,7 +79,7 @@ services:
       context: ./bot
       dockerfile: Dockerfile
     env_file:
-      - ./api/.env
+      - .env
     environment:
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
       API_URL: http://api:8000

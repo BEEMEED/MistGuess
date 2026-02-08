@@ -1,7 +1,7 @@
 from services.matchmaking_service import matchmaking_instance
 from config import config
 from fastapi import APIRouter, WebSocket, Depends, HTTPException, WebSocketDisconnect
-from services.authorization import AuthService
+from utils.token_manager import TokenManager
 import logging
 from database.database import get_db
 from repositories.user_repository import UserRepository
@@ -9,7 +9,6 @@ from repositories.lobby_repository import LobbyRepository
 from database.database import asyncsession
 logger = logging.getLogger(__name__)
 router = APIRouter()
-auth = AuthService()
 
 
 
@@ -26,7 +25,7 @@ async def matchmaking_route(websocket: WebSocket):
     try:
         
         async with asyncsession() as db:
-            token_data = await auth.verifyToken(db, token)
+            token_data = await TokenManager.verifyToken(db, token)
             user_id = token_data["user_id"]
 
             

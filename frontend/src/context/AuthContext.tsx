@@ -111,10 +111,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleGoogleCallback = async (code: string): Promise<void> => {
     try {
       const response = await apiService.loginWithGoogle(code);
-      const { user_id, token } = response;
+      const { user_id, access_token } = response;
 
       apiService.saveUser(user_id.toString());
-      apiService.setToken(token);
+      apiService.setToken(access_token);
 
       // Load profile to get name and avatar
       try {

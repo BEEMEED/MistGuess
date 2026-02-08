@@ -8,16 +8,21 @@ TIMER = 240
 class LobbyRepository:
     
     @staticmethod
-    async def create(db: AsyncSession,host_id:int):
+    async def create(db: AsyncSession,host_id:int, mode: str | None = None, war_id: int | None = None):
         InviteCode = secrets.token_urlsafe(6)
         locations_objs = await LocationRepository.get_random_location(db, 13)
         locations = [{"lat": loc.lat, "lon": loc.lon, "region": loc.region, "url": f"https://www.google.com/maps/@{loc.lat},{loc.lon},17z","country": loc.country} for loc in locations_objs]
-        lobby = Lobby(invite_code=InviteCode, host_id=host_id, locations=locations,timer=TIMER,users=[host_id])
+        if mode:
+            lobby = Lobby(invite_code=InviteCode, host_id=host_id, locations=locations,timer=TIMER,mode=mode,war_id=war_id,users=[host_id])
+        else:
+            lobby = Lobby(invite_code=InviteCode, host_id=host_id, locations=locations,timer=TIMER,users=[host_id])
 
         db.add(lobby)
         await db.commit()
         await db.refresh(lobby)
         return lobby
+    
+
     
     @staticmethod
     async def get_by_code(db: AsyncSession, lobby_code: str):

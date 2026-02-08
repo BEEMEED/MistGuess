@@ -2,7 +2,7 @@
 
 **MistGuess** is a real-time multiplayer geoguessr clone with matchmaking system and competitive gameplay. Players compete to guess locations on google street view, earning points based on accuracy and speed.
 
-the platform features skill based matchmaking, XP progression with ranks, and real time webSocket communication for multiplayer experience.
+the platform features skill based matchmaking, XP progression with ranks, clan system with asynchronous 5v5 clan wars, and real time webSocket communication for multiplayer experience.
 
 > **Note:** Frontend was generated with LLM for demonstration purposes.
 
@@ -17,6 +17,10 @@ the platform features skill based matchmaking, XP progression with ranks, and re
 - **hp combat** - guess accuracy deals damage to opponent
 - **reconnection support** - rejoin games after disconnect
 - **admin panel** - manage locations and users
+- **orders (clans)** - closed clans with invite system
+- **oredrs wars** - asynchronous 5v5 battles between clans
+- **order ranks** - progression via clan xp
+- **reputation system** - track clan reliability
 
 ## tech
 

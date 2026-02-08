@@ -7,7 +7,7 @@ from tests.test_lobbies import test_user
 @pytest.fixture
 async def admin_user(db_session):
     user = await UserRepository.create(db_session,google_id="12333",username="test")
-    user = await UserRepository.update(db_session,user.id,role="admin")
+    user = await UserRepository.update(db_session, user.id, {"role": "admin"})
     await db_session.commit()
     if not user:
         return

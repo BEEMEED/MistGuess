@@ -1,14 +1,11 @@
 from aiogram import Dispatcher, Bot
 from aiogram.fsm.storage.memory import MemoryStorage
+from config import Config
+from handlers.start import router as start_handler
+from handlers.inline import router as inline_handler
 import asyncio
-import os
-from dotenv import load_dotenv
 
-from handlers.notification_handler import router as register_handlers, start_consum
-
-load_dotenv()
-
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_TOKEN = Config.BOT_TOKEN
 if not TELEGRAM_TOKEN:
     raise ValueError("TELEGRAM_TOKEN not found in environment variables")
 
@@ -16,12 +13,12 @@ bot = Bot(token=TELEGRAM_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
-dp.include_router(register_handlers)
+dp.include_router(start_handler)
+dp.include_router(inline_handler)
 
 async def main():
-    print("бот запущен.")
-    asyncio.create_task(start_consum())
-    await dp.start_polling(bot)
+    print("bot is starting")
+    await dp.start_polling(bot, allowed_updates=["message", "callback_query", "inline_query"])
 
 if __name__ == '__main__':
     asyncio.run(main())

@@ -139,6 +139,6 @@ class Admin_Panel:
             raise HTTPException(status_code=404, detail="User not found")
         if user.role == "admin":
             raise HTTPException(status_code=409, detail="User is already admin")
-        await UserRepository.update(db,id,role="admin")
+        await UserRepository.update(db, id, {"role": "admin"})
 
         logging.warning(f"Admin {admin_login} changed role of user {user.name}[{user.id}] to admin")
