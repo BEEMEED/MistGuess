@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select,func
+from sqlalchemy import select, func, any_
 from models.lobby import Lobby
 from sqlalchemy.exc import IntegrityError
 import secrets
@@ -87,5 +87,7 @@ class LobbyRepository:
     
     @staticmethod
     async def get_by_user_id(db: AsyncSession, user_id: int):
-        result = await db.execute(select(Lobby).filter(Lobby.users.contains([user_id])))
+        result = await db.execute(
+            select(Lobby).where(Lobby.users.overlap([user_id]))
+        )
         return result.scalars().all()

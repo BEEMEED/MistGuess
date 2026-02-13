@@ -86,7 +86,7 @@ async def trigger_error():
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(telegram, prefix="/telegram", tags=["telegram"])
 app.include_router(matchmaking, prefix="/matchmaking", tags=["matchmaking"])
-app.include_router(clans, prefix="/clan", tags=["clan"])
+app.include_router(clans, prefix="/clans", tags=["clans"])
 app.include_router(admin, prefix="/admin", tags=["admin"])
 app.include_router(auth, prefix="/auth", tags=["auth"])
 app.include_router(lobby_router, prefix="/lobbies", tags=["lobbies"])

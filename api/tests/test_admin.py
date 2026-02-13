@@ -1,49 +1,44 @@
 import pytest
 from repositories.user_repository import UserRepository
 from services.authorization import TokenManager
-from tests.test_lobbies import test_user
-
-
-@pytest.fixture
-async def admin_user(db_session):
-    user = await UserRepository.create(db_session,google_id="12333",username="test")
-    user = await UserRepository.update(db_session, user.id, {"role": "admin"})
-    await db_session.commit()
-    if not user:
-        return
-    token = TokenManager.create_token({"id": user.id})
-    return {"user": user, "token": token}
 
 @pytest.mark.asyncio
-async def test_admin_panel(client,admin_user):
-    client.cookies.set("access_token", admin_user["token"])
-    response = await client.get("/admin")
+async def test_get_admin_panel_with_pagination(client, regular_user_admin):
+    client.cookies.set("access_token", regular_user_admin["token"])
+    response = await client.get("/admin/?limit=10&page=1")
+    assert response.status_code == 200
+    assert "data_user" in response.json()
+    assert "data_lobby" in response.json()
+    assert "data_location" in response.json()
+
+@pytest.mark.asyncio
+async def test_create_location_valid_coords(client, regular_user_admin):
+    client.cookies.set("access_token", regular_user_admin["token"])
+    response = await client.post("/admin/locations",json={"lat": 48.8566, "lon": 2.3522, "region": "europe", "country":"Russia"})
+    assert response.status_code == 200
+    assert "location_id" in response.json()
+
+@pytest.mark.asyncio
+async def test_update_location_as_admin(client, regular_user_admin, Location):
+    client.cookies.set("access_token", regular_user_admin["token"])
+    response = await client.patch(f"/admin/locations/{Location.id}", json={"region": "eust"})
+    assert response.status_code == 200
+    assert "lat" in response.json()
+
+@pytest.mark.asyncio
+async def test_delete_location_as_admin(client, regular_user_admin, Location):
+    client.cookies.set("access_token", regular_user_admin["token"])
+    response = await client.delete(f"/admin/locations/{Location.id}")
     assert response.status_code == 200
 
 @pytest.mark.asyncio
-async def test_create_location(client,admin_user):
-    client.cookies.set("access_token", admin_user["token"])
-    response = await client.post("/admin/locations",json={"lat": -90,"lon": -180,"region": "africa"})
-    assert response.status_code == 200
-    return response.json()["location_id"]
-
-@pytest.mark.asyncio
-async def test_delete_location(client,admin_user,test_create_location):
-    client.cookies.set("access_token", admin_user["token"])
-    response = await client.delete("/admin/locations/{location_id}",json={"location_id": test_create_location})
+async def test_ban_user_with_reason(client, regular_user_admin, regular_user, redis_client):
+    client.cookies.set("access_token", regular_user_admin["token"])
+    response = await client.request("DELETE", f"/admin/users/{regular_user['user'].id}/ban", json={"reason": "test"})
     assert response.status_code == 200
 
 @pytest.mark.asyncio
-async def test_ban_user(client,admin_user,test_user):
-    client.cookies.set("acess_token", admin_user["token"])
-    user_id = test_user["id"]
-    response = await client.delete("/admin/users/{user_id}/ban",json={"reason":"test"})
+async def test_update_user_role_to_admin(client, regular_user_admin, regular_user):
+    client.cookies.set("access_token", regular_user_admin["token"])
+    response = await client.patch(f"/admin/users/{regular_user['user'].id}/role", json={"role": "admin"})
     assert response.status_code == 200
-
-@pytest.mark.asyncio
-async def test_update_user_role(client,admin_user,test_user):
-    client.cookies.set("acess_token", admin_user["token"])
-    user_id = test_user["id"]
-    response = await client.patch("/admin/users/{user_id}/role",json={})
-    assert response.status_code == 200
-

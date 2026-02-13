@@ -15,6 +15,9 @@ import { AddLocationPage } from './pages/AddLocationPage';
 import { MatchmakingPage } from './pages/MatchmakingPage';
 import { GuidePage } from './pages/GuidePage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
+import { ClansPage } from './pages/ClansPage';
+import { ClanDetailPage } from './pages/ClanDetailPage';
+import { ClanWarPage } from './pages/ClanWarPage';
 
 function App() {
   return (
@@ -31,6 +34,9 @@ function App() {
               <Route path="/guide" element={<GuidePage />} />
               <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/matchmaking" element={<MatchmakingPage />} />
+              <Route path="/clans" element={<ClansPage />} />
+              <Route path="/clans/:clanId" element={<ClanDetailPage />} />
+              <Route path="/clans/wars/:warId" element={<ClanWarPage />} />
               <Route path="/lobby/:code" element={<LobbyPage />} />
               <Route path="/game/:code" element={<GamePage />} />
               <Route path="/results/:code" element={<RoundResultsPage />} />

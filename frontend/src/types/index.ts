@@ -46,6 +46,9 @@ export interface User {
   xp?: number; // Experience points
   rank?: string; // Current rank
   role?: string; // User role (admin or user)
+  clan_id?: number; // Clan ID
+  clan_role?: string; // Clan role (owner, admin, member)
+  clan_tag?: string; // Clan tag for display
 }
 
 export interface PlayerInfo {
@@ -54,6 +57,8 @@ export interface PlayerInfo {
   avatar: string;
   xp: number;
   rank: string;
+  clan_id?: number;
+  clan_tag?: string;
 }
 
 // WebSocket Event Types
@@ -386,4 +391,66 @@ export interface MatchmakingContextType {
   leaveQueue: () => void;
   isConnected: boolean;
   resetRedirectFlag: () => void;
+}
+
+// Clan Types
+
+export interface Clan {
+  id: number;
+  name: string;
+  tag: string;
+  owner_id: number;
+  members: number[];
+  member_count: number;
+  rank: string;
+  xp: number;
+  reputation: number;
+  description: string;
+  created_at: string;
+  wars_won: number;
+  wars_lost: number;
+  wars_total: number;
+}
+
+export interface ClanWar {
+  id: number;
+  clan_1_id: number;
+  clan_2_id: number;
+  rounds: number;
+  status: 'pending' | 'ongoing' | 'completed' | 'cancelled';
+  clan_1_score: number;
+  clan_2_score: number;
+  winner_clan_id: number;
+  participants: {
+    clan_1: number[];
+    clan_2: number[];
+    pairs?: ClanWarPair[];
+  };
+  xp_awarded_clan_1: number;
+  xp_awarded_clan_2: number;
+  created_at: string;
+  started_at?: string;
+  completed_at?: string;
+}
+
+export interface ClanWarPair {
+  clan_1: number;
+  clan_2: number;
+  status: 'pending' | 'ongoing' | 'completed';
+  clan_1_score: number | null;
+  clan_2_score: number | null;
+  lobby_id: number | null;
+  winner: number | null;
+}
+
+export interface ClanInvite {
+  id: number;
+  clan_id: number;
+  inviter_id: number;
+  invitee_id: number;
+  code: string;
+  status: 'pending' | 'accepted' | 'declined';
+  created_at: string;
+  expires_at: string;
+  responded_at?: string;
 }

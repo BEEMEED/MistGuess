@@ -85,6 +85,35 @@
   animation: guidePulse 1s infinite;
 }
 
+/* Clans Button */
+.home-page__clans-btn {
+  position: fixed;
+  top: 20px;
+  left: 140px;
+  z-index: 100;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(10, 10, 10, 0.8);
+  border: 2px solid rgba(150, 150, 150, 0.4);
+  color: rgba(180, 180, 180, 0.9);
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(120, 120, 120, 0.2);
+  backdrop-filter: blur(5px);
+}
+
+.home-page__clans-btn:hover {
+  background: rgba(60, 60, 60, 0.3);
+  border-color: rgba(180, 180, 180, 0.6);
+  box-shadow: 0 0 30px rgba(140, 140, 140, 0.4);
+  transform: scale(1.1);
+}
+
 @keyframes guidePulse {
   0%, 100% {
     box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);

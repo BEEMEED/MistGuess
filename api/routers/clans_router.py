@@ -7,26 +7,31 @@ from repositories.clan_repository import ClanRepository
 import secrets
 from models.user import User
 router = APIRouter()
+Dependies = Dependies()
 
-@router.post("/")
+@router.post("")
 async def create_clan(request: ClanRequest,current_user: User = Depends(Dependies.get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.clan_id != 0:
         raise HTTPException(status_code=400, detail="You are already in a clan")
     if current_user.xp < 500:
         raise HTTPException(status_code=400, detail="Not enough xp")
     return await ClanRepository.create(request.name, current_user.id, [current_user.id],db, request.tag, request.description)
-    
-@router.get("/")
+
+@router.get("/all")
+async def get_all_clans(db: AsyncSession = Depends(get_db)):
+    return await ClanRepository.get_all(db)
+
+@router.get("")
 async def get_clan(current_user: User = Depends(Dependies.get_current_user), db: AsyncSession = Depends(get_db)):
     clan_data = await ClanRepository.get_by_id(db, current_user.clan_id)
     if not clan_data:
         raise HTTPException(status_code=404, detail="Clan not found")
-    
+
     if not current_user.id in clan_data.members:
         raise HTTPException(status_code=403, detail="You are not a member of this clan")
     return clan_data
 
-@router.delete("/")
+@router.delete("")
 async def delete_clan(current_user: User = Depends(Dependies.get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.clan_role != "owner":
         raise HTTPException(status_code=403, detail="You are not the owner of this clan")
@@ -62,7 +67,7 @@ async def join_clan(invite_code: str,current_user: User = Depends(Dependies.get_
 async def get_other_clan(clan_id: int, current_user: User = Depends(Dependies.get_current_user), db: AsyncSession = Depends(get_db)):
     return await ClanRepository.get_by_id(db, clan_id)
 
-@router.patch("/")
+@router.patch("")
 async def update_clan(request: ClanRequest, current_user: User = Depends(Dependies.get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.clan_role != "owner":
         raise HTTPException(status_code=403, detail="You are not the owner of this clan")

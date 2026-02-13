@@ -5,7 +5,7 @@ import type {
   MatchmakingContextType,
   MatchmakingState,
   WSMatchmakingEvent,
-} from '../types';
+} from '../types/index';
 
 const MatchmakingContext = createContext<MatchmakingContextType | undefined>(undefined);
 

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiService } from '../services/api';
-import type { AuthContextType, User } from '../types';
+import type { AuthContextType, User } from '../types/index';
 import { ReconnectPrompt } from '../components/ui/ReconnectPrompt';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleGoogleCallback = async (code: string): Promise<void> => {
     try {
       const response = await apiService.loginWithGoogle(code);
-      const { user_id, access_token } = response;
+      const { user_id, access_token, clan_id, clan_role, clan_tag } = response;
 
       apiService.saveUser(user_id.toString());
       apiService.setToken(access_token);
@@ -126,12 +126,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           avatar: profile.avatar,
           xp: profile.xp,
           rank: profile.rank,
-          role: profile.role
+          role: profile.role,
+          clan_id: clan_id || profile.clan_id,
+          clan_role: clan_role || profile.clan_role,
+          clan_tag: clan_tag || profile.clan_tag,
         });
       } catch (error) {
         // If profile fetch fails, just set basic user info
         console.error('Failed to load profile:', error);
-        setUser({ user_id, token });
+        setUser({
+          user_id,
+          token,
+          clan_id,
+          clan_role,
+          clan_tag,
+        });
       }
     } catch (error: any) {
       console.error('Google callback failed:', error);

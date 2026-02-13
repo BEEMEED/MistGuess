@@ -5,6 +5,7 @@ import { MistbornButton } from '../components/ui/MistbornButton';
 import { MistbornCard } from '../components/ui/MistbornCard';
 import { RankBadge } from '../components/ui/RankBadge';
 import { Avatar } from '../components/ui/Avatar';
+import { ClanTag } from '../components/ui/ClanTag';
 import { FogOverlay } from '../components/effects/FogOverlay';
 import { AshParticles } from '../components/effects/AshParticles';
 import '../styles/LeaderboardPage.css';
@@ -14,6 +15,7 @@ interface LeaderboardEntry {
   xp: number;
   rank: string;
   avatar: string;
+  clan_tag?: string;
 }
 
 export const LeaderboardPage: React.FC = () => {
@@ -95,7 +97,10 @@ export const LeaderboardPage: React.FC = () => {
                 <Avatar src={entry.avatar} size="medium" />
 
                 <div className="entry-info">
-                  <div className="entry-name">{entry.name}</div>
+                  <div className="entry-name">
+                    {entry.clan_tag && <ClanTag tag={entry.clan_tag} size="small" />}
+                    {entry.name}
+                  </div>
                   <div className="entry-xp">{entry.xp} XP</div>
                 </div>
 

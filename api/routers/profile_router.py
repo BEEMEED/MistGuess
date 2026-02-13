@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile, Request
 from services.authorization import AuthService, TokenManager
 from services.profile_service import Profile
 from schemas.profile_schema import EditName, Leaderboard
@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from repositories.user_repository import UserRepository
 from cache.redis import r
 import json
+from models.user import User
 from utils.rate_limiter import rate_limit
 
 dependies = Dependies()
@@ -18,30 +19,30 @@ profile = Profile()
 @router.patch("/")
 async def name_edit(
     request: EditName,
-    token: dict = Depends(dependies.get_current_user),
+    token: User = Depends(dependies.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await profile.NameEdit(db, token["user_id"], request.new_name)
+    return await profile.NameEdit(db, token.id, request.new_name)
 
 
 @router.put("/avatar")
 async def avatar_edit(
     file: UploadFile = Depends(dependies.validate_avatar),
-    token: dict = Depends(dependies.get_current_user),
+    token: User = Depends(dependies.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await profile.AvatarEdit(db,token["user_id"], file)
+    return await profile.AvatarEdit(db, token.id, file)
 
 
 @router.get("/avatar")
 @rate_limit(max_requests=3, seconds=60)
-async def avatar_get(token: dict = Depends(dependies.get_current_user),db: AsyncSession = Depends(get_db)):
-    return await profile.get_avatar(db,token["user_id"])
+async def avatar_get(request: Request, token: User = Depends(dependies.get_current_user),db: AsyncSession = Depends(get_db)):
+    return await profile.get_avatar(db, token.id)
 
 
 @router.get("/me")
-async def me(token: dict = Depends(dependies.get_current_user), db: AsyncSession = Depends(get_db)):
-    return await profile.get_me(db,token["user_id"])
+async def me(token: User = Depends(dependies.get_current_user), db: AsyncSession = Depends(get_db)):
+    return await profile.get_me(db, token.id)
 
 @router.get("/leaderboard",response_model=list[Leaderboard],)
 async def leaderboard(db: AsyncSession = Depends(get_db)):

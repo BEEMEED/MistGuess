@@ -7,7 +7,7 @@ from utils.rate_limiter import rate_limit
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from repositories.location_repository import LocationRepository
-
+from models.user import User
 loc = LocationService()
 router = APIRouter()
 lobby = LobbyService()
@@ -18,10 +18,10 @@ dependies = Dependies()
 @rate_limit(max_requests=10,seconds=60)
 async def LobbyCreate(
     request: Request,
-    token: dict = Depends(dependies.get_current_user),
+    token: User = Depends(dependies.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await lobby.create_lobby(db, token["user_id"])
+    return await lobby.create_lobby(db, token.id)
 
 
 @router.put("/{invite_code}/members")
@@ -29,21 +29,21 @@ async def LobbyCreate(
 async def LobbyJoin(
     invite_code: str,
     request: Request,
-    token: dict = Depends(dependies.get_current_user),
+    token: User = Depends(dependies.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     validate_code = await dependies.get_invite_code(invite_code, db)
-    return await lobby.lobby_join(db, invite_code, token["user_id"])
+    return await lobby.lobby_join(db, invite_code, token.id)
 
 
 @router.delete("/{invite_code}/members")
 async def LobbyLeave(
     invite_code: str,
-    token: dict = Depends(dependies.get_current_user),
+    token: User = Depends(dependies.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     validate_code = await dependies.get_invite_code(invite_code, db)
-    return await lobby.lobby_leave(db, invite_code, token["user_id"])
+    return await lobby.lobby_leave(db, invite_code, token.id)
 
 
 @router.get("/random")

@@ -6,7 +6,7 @@ from database.database import get_db
 from models.user import User
 router = APIRouter()
 dependies = Dependies()
-@router.get("{telegram_id}/stats")
+@router.get("/{telegram_id}/stats")
 async def get_telegram_stats(
     telegram_id: str,
     db: AsyncSession = Depends(get_db),

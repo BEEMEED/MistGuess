@@ -1,6 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from models.user import User
+from models.clans import Clans
 from sqlalchemy.exc import IntegrityError
 import logging
 
@@ -27,6 +29,14 @@ class UserRepository:
     async def get_by_id(db: AsyncSession, id: int):
         result = await db.execute(select(User).filter(User.id == id))
         return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_clan_tag(db: AsyncSession, user: User) -> str | None:
+        if not user.clan_id:
+            return None
+        result = await db.execute(select(Clans).filter(Clans.id == user.clan_id))
+        clan = result.scalar_one_or_none()
+        return clan.tag if clan else None
 
     @staticmethod
     async def get_by_google_id(db: AsyncSession, google_id: int):
@@ -76,17 +86,20 @@ class UserRepository:
     async def get_leaderboard(db: AsyncSession):
         result = await db.execute(select(User).order_by(User.xp.desc()).limit(10))
         users = result.scalars().all()
-        return [
-            {
+
+        leaderboard = []
+        for user in users:
+            clan_tag = await UserRepository.get_clan_tag(db, user)
+            leaderboard.append({
                 "id": user.id,
                 "username": user.username,
                 "name": user.name,
                 "xp": user.xp,
                 "rank": user.rank,
                 "avatar": user.avatar,
-            }
-            for user in users
-        ]
+                "clan_tag": clan_tag,
+            })
+        return leaderboard
 
     @staticmethod
     async def get_by_telegram(db: AsyncSession, telegram_id: str):

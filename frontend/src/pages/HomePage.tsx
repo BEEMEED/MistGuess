@@ -308,6 +308,11 @@ export const HomePage: React.FC = () => {
         📖
       </button>
 
+      {/* Clans Button - top left */}
+      <button className="home-page__clans-btn" onClick={() => navigate('/clans')} title="Clans">
+        ⚔️
+      </button>
+
       {/* Settings Button - always visible */}
       <button className="home-page__settings-btn" onClick={() => setShowSettings(true)}>
         ⚙️

@@ -10,9 +10,56 @@ import type {
   WSEvent,
   RoundResult,
   PlayerGuess,
-} from '../types';
+} from '../types/index';
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
+
+// LocalStorage keys
+const STORAGE_KEYS = {
+  LOBBY_CODE: 'geoguessr_current_lobby',
+  RECONNECT_ATTEMPT: 'geoguessr_reconnect_attempt',
+};
+
+// Helper functions for localStorage
+const saveLobbyToStorage = (lobbyCode: string) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.LOBBY_CODE, lobbyCode);
+    localStorage.setItem(STORAGE_KEYS.RECONNECT_ATTEMPT, Date.now().toString());
+  } catch (error) {
+    console.error('Failed to save lobby to localStorage:', error);
+  }
+};
+
+const getLobbyFromStorage = (): string | null => {
+  try {
+    const lobbyCode = localStorage.getItem(STORAGE_KEYS.LOBBY_CODE);
+    const attemptTime = localStorage.getItem(STORAGE_KEYS.RECONNECT_ATTEMPT);
+
+    // Only reconnect if saved within last 30 minutes
+    if (lobbyCode && attemptTime) {
+      const timeDiff = Date.now() - parseInt(attemptTime);
+      if (timeDiff < 30 * 60 * 1000) { // 30 minutes
+        return lobbyCode;
+      }
+    }
+
+    // Clear old data
+    clearLobbyFromStorage();
+    return null;
+  } catch (error) {
+    console.error('Failed to get lobby from localStorage:', error);
+    return null;
+  }
+};
+
+const clearLobbyFromStorage = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.LOBBY_CODE);
+    localStorage.removeItem(STORAGE_KEYS.RECONNECT_ATTEMPT);
+  } catch (error) {
+    console.error('Failed to clear lobby from localStorage:', error);
+  }
+};
 
 export const useLobby = () => {
   const context = useContext(LobbyContext);
@@ -334,6 +381,44 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
     return unsubscribe;
   }, [handleWSEvent]);
 
+  // Auto-reconnect on page reload
+  useEffect(() => {
+    // Wait for user to be loaded
+    if (!user) {
+      console.log('[Reconnect] Waiting for user to load...');
+      return;
+    }
+
+    // Skip if already connected
+    if (isConnected || gameState) {
+      console.log('[Reconnect] Already connected, skipping');
+      return;
+    }
+
+    // Check if there's a saved lobby in localStorage
+    const savedLobbyCode = getLobbyFromStorage();
+    if (!savedLobbyCode) {
+      console.log('[Reconnect] No saved lobby found');
+      return;
+    }
+
+    console.log('[Reconnect] Found saved lobby, attempting to reconnect:', savedLobbyCode);
+
+    const attemptReconnect = async () => {
+      try {
+        // Try to reconnect to the saved lobby
+        await joinLobby(savedLobbyCode, true);
+        console.log('[Reconnect] Successfully reconnected to lobby');
+      } catch (error) {
+        console.error('[Reconnect] Failed to reconnect to saved lobby:', error);
+        // Clear invalid lobby data
+        clearLobbyFromStorage();
+      }
+    };
+
+    attemptReconnect();
+  }, [user]); // Run when user changes from null to loaded
+
   const createLobby = async (): Promise<string> => {
     if (!user) {
       throw new Error('User not authenticated');
@@ -346,6 +431,9 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
 
       await wsService.connect(inviteCode, user.token);
       setIsConnected(true);
+
+      // Save lobby to localStorage for reconnection after page reload
+      saveLobbyToStorage(inviteCode);
 
       setGameState({
         lobbyCode: inviteCode,
@@ -405,6 +493,9 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
       await wsService.connect(inviteCode, user.token);
       setIsConnected(true);
 
+      // Save lobby to localStorage for reconnection after page reload
+      saveLobbyToStorage(inviteCode);
+
       // If reconnecting, send reconnect message
       if (isReconnect) {
         wsService.reconnect();
@@ -449,6 +540,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
         wsService.disconnect();
         setIsConnected(false);
         setGameState(null);
+        clearLobbyFromStorage();
         return;
       }
 
@@ -456,6 +548,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
       wsService.disconnect();
       setIsConnected(false);
       setGameState(null);
+      clearLobbyFromStorage();
     } catch (err: any) {
       // If lobby not found (404) or already left (409), just disconnect anyway
       if (
@@ -469,6 +562,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
         wsService.disconnect();
         setIsConnected(false);
         setGameState(null);
+        clearLobbyFromStorage();
         return;
       }
 

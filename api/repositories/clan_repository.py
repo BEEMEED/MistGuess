@@ -5,6 +5,7 @@ from config import config
 import logging
 from datetime import datetime
 from models.user import User
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,17 +23,18 @@ class ClanRepository:
         clan = Clans(
             name=name,
             members=members,
-            rank=config.CLAN_RANKS[0],
+            rank=config.CLAN_RANKS[0][1],
             owner_id=owner_id,
             tag=tag,
             member_count=1,
-            description=description,)
-        
+            description=description,
+        )
+
         db.add(clan)
         await db.commit()
         await db.refresh(clan)
         return clan
-    
+
     @staticmethod
     async def update(db: AsyncSession, clan_id: int, update_data: dict):
         result = await db.execute(select(Clans).where(Clans.id == clan_id))
@@ -50,12 +52,12 @@ class ClanRepository:
                 await db.rollback()
                 logger.error(f"Failed to update clan {clan_id}: {e}")
                 raise
-    
+
     @staticmethod
     async def get_by_id(db: AsyncSession, id: int):
         result = await db.execute(select(Clans).filter(Clans.id == id))
         return result.scalar_one_or_none()
-    
+
     @staticmethod
     async def delete(db: AsyncSession, clan_id: int):
         result = await db.execute(select(Clans).filter(Clans.id == clan_id))
@@ -77,9 +79,9 @@ class ClanRepository:
             await db.refresh(result)
             return result
         return
-    
+
     @staticmethod
-    async def remove_member(user_id: int,clan_id: int, db: AsyncSession):
+    async def remove_member(user_id: int, clan_id: int, db: AsyncSession):
         result = await db.execute(select(Clans).filter(Clans.id == clan_id))
         result = result.scalar_one_or_none()
         if result:
@@ -94,9 +96,9 @@ class ClanRepository:
                 await db.commit()
                 await db.refresh(result)
                 return result
-    
+
     @staticmethod
-    async def update_member_role(user_id: int, db:AsyncSession):
+    async def update_member_role(user_id: int, db: AsyncSession):
         result = await db.execute(select(Clans).filter(Clans.owner_id == user_id))
         result = result.scalar_one_or_none()
         if result:
@@ -116,32 +118,34 @@ class ClanRepository:
         await db.commit()
         await db.refresh(clan_invite)
         return clan_invite
-    
+
     @staticmethod
     async def get_invite(db: AsyncSession, code: str):
         result = await db.execute(select(ClanInvite).filter(ClanInvite.code == code))
         result_clan_invite = result.scalar_one_or_none()
         return result_clan_invite
-    
+
     @staticmethod
-    async def accept_invite(db: AsyncSession,user_id: int ,code: str):
+    async def accept_invite(db: AsyncSession, user_id: int, code: str):
         result = await db.execute(select(ClanInvite).filter(ClanInvite.code == code))
         result_clan_invite = result.scalar_one_or_none()
 
         if result_clan_invite:
             if result_clan_invite.expires_at < datetime.now():
                 return
-            
+
             result_clan_invite.status = "accepted"
             result_clan_invite.responded_at = datetime.now()
 
-            result_clan = await db.execute(select(Clans).filter(Clans.id == result_clan_invite.clan_id))
+            result_clan = await db.execute(
+                select(Clans).filter(Clans.id == result_clan_invite.clan_id)
+            )
             result_clan = result_clan.scalar_one_or_none()
 
             if result_clan:
                 result_clan.members.append(user_id)
                 result_clan.member_count += 1
-            
+
             user_result = await db.execute(select(User).filter(User.id == user_id))
             user_result = user_result.scalar_one_or_none()
             if user_result:
@@ -152,16 +156,18 @@ class ClanRepository:
         await db.commit()
         await db.refresh(result_clan_invite)
         return result_clan_invite
-    
+
     @staticmethod
-    async def create_war(db: AsyncSession, attacker_clan_id: int, defender_clan_id: int, user_id: int):
+    async def create_war(
+        db: AsyncSession, attacker_clan_id: int, defender_clan_id: int, user_id: int
+    ):
         war = ClanWars(
             clan_1_id=attacker_clan_id,
             clan_2_id=defender_clan_id,
             created_by_user_id=user_id,
             created_at=datetime.now(),
             participants={"clan_1": [], "clan_2": [], "pairs": []},
-            round_results=[]
+            round_results=[],
         )
         try:
             db.add(war)
@@ -172,12 +178,12 @@ class ClanRepository:
             await db.rollback()
             logger.error(f"Failed to create war: {e}")
             raise
-    
+
     @staticmethod
     async def get_war(db: AsyncSession, war_id: int):
         result = await db.execute(select(ClanWars).filter(ClanWars.id == war_id))
         return result.scalar_one_or_none()
-    
+
     @staticmethod
     async def submit_war(db: AsyncSession, war_id: int):
         war = await db.execute(select(ClanWars).filter(ClanWars.id == war_id))
@@ -189,7 +195,7 @@ class ClanRepository:
             await db.commit()
             await db.refresh(result)
             return result
-    
+
     @staticmethod
     async def declaim_war(db: AsyncSession, war_id: int):
         war = await db.execute(select(ClanWars).filter(ClanWars.id == war_id))
@@ -199,7 +205,9 @@ class ClanRepository:
             result.completed_at = datetime.now()
             result.winner_clan_id = result.clan_1_id
 
-            winner_clan = await db.execute(select(Clans).filter(Clans.id == result.clan_1_id))
+            winner_clan = await db.execute(
+                select(Clans).filter(Clans.id == result.clan_1_id)
+            )
             winner_clan = winner_clan.scalar_one_or_none()
             if winner_clan:
                 winner_clan.wars_won += 1
@@ -207,7 +215,9 @@ class ClanRepository:
                 winner_clan.reputation += 10
                 winner_clan.xp += 50
 
-            loser_clan = await db.execute(select(Clans).filter(Clans.id == result.clan_2_id))
+            loser_clan = await db.execute(
+                select(Clans).filter(Clans.id == result.clan_2_id)
+            )
             loser_clan = loser_clan.scalar_one_or_none()
             if loser_clan:
                 loser_clan.wars_lost += 1
@@ -218,14 +228,16 @@ class ClanRepository:
             await db.commit()
             await db.refresh(result)
             return result
-    
+
     @staticmethod
-    async def set_participants(db: AsyncSession, war_id: int,clan_id, players: list[int]):
+    async def set_participants(
+        db: AsyncSession, war_id: int, clan_id, players: list[int]
+    ):
         war = await db.execute(select(ClanWars).filter(ClanWars.id == war_id))
         result = war.scalar_one_or_none()
         if not result:
             return
-        
+
         participants = dict(result.participants)
 
         if clan_id == result.clan_1_id:
@@ -244,52 +256,57 @@ class ClanRepository:
             db.expire(result)
             await db.refresh(result)
         return result
-        
-    
+
     @staticmethod
-    async def create_pair(db:AsyncSession, war_id: int):
+    async def create_pair(db: AsyncSession, war_id: int):
         war = await db.execute(select(ClanWars).filter(ClanWars.id == war_id))
         result = war.scalar_one_or_none()
         if not result or not result.participants:
             return None
-        
+
         clan_1_ids = result.participants.get("clan_1", [])
         clan_2_ids = result.participants.get("clan_2", [])
 
         if len(clan_1_ids) != 5 or len(clan_2_ids) != 5:
             return None
-        
+
         all_ids = clan_1_ids + clan_2_ids
-        users_result = await db.execute(
-            select(User).filter(User.id.in_(all_ids))
-        )
+        users_result = await db.execute(select(User).filter(User.id.in_(all_ids)))
 
         user_xp_map = {user.id: user.xp for user in users_result.scalars().all()}
 
-        clan_1_sorted = sorted(clan_1_ids, key=lambda uid: user_xp_map.get(uid, 0), reverse=True)
-        clan_2_sorted = sorted(clan_2_ids, key=lambda uid: user_xp_map.get(uid, 0), reverse=True)
+        clan_1_sorted = sorted(
+            clan_1_ids, key=lambda uid: user_xp_map.get(uid, 0), reverse=True
+        )
+        clan_2_sorted = sorted(
+            clan_2_ids, key=lambda uid: user_xp_map.get(uid, 0), reverse=True
+        )
 
-        pairs =[
-        {
-                "clan_1": p1, "clan_2": p2,"status": "pending", "clan_1_score": None, "clan_2_score": None, "lobby_id": None, "winner": None
-            
+        pairs = [
+            {
+                "clan_1": p1,
+                "clan_2": p2,
+                "status": "pending",
+                "clan_1_score": None,
+                "clan_2_score": None,
+                "lobby_id": None,
+                "winner": None,
             }
-        for p1, p2 in zip(clan_1_sorted, clan_2_sorted)
+            for p1, p2 in zip(clan_1_sorted, clan_2_sorted)
         ]
 
-        
         result.participants = {
             "clan_1": clan_1_sorted,
             "clan_2": clan_2_sorted,
             "pairs": pairs,
         }
-        
+
         result.status = "ongoing"
         result.started_at = datetime.now()
         await db.commit()
         await db.refresh(result)
         return result
-    
+
     @staticmethod
     async def update_participants(db: AsyncSession, war_id: int, participants: dict):
         war = await db.execute(select(ClanWars).filter(ClanWars.id == war_id))
@@ -299,3 +316,8 @@ class ClanRepository:
             await db.commit()
             await db.refresh(result)
             return result
+
+    @staticmethod
+    async def get_all(db: AsyncSession):
+        result = await db.execute(select(Clans))
+        return result.scalars().all()

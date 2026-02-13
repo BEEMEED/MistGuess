@@ -4,7 +4,7 @@ import type {
   LoginResponse,
   CreateLobbyResponse,
   APIError,
-} from '../types';
+} from '../types/index';
 import { toastManager } from './toastManager';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -272,6 +272,97 @@ class APIService {
 
   public async getSoloRound(): Promise<{ lat: number; lon: number }> {
     const response = await this.client.get<{ lat: number; lon: number }>('/lobbies/random');
+    return response.data;
+  }
+
+  // Clan endpoints
+
+  public async getAllClans(): Promise<any[]> {
+    const response = await this.client.get('/clans/all');
+    return response.data;
+  }
+
+  public async getMyClan(): Promise<any> {
+    const response = await this.client.get('/clans');
+    return response.data;
+  }
+
+  public async getClan(clanId: number): Promise<any> {
+    const response = await this.client.get(`/clans/${clanId}`);
+    return response.data;
+  }
+
+  public async createClan(name: string, tag: string, description: string): Promise<any> {
+    const response = await this.client.post('/clans', {
+      name,
+      tag,
+      description
+    });
+    return response.data;
+  }
+
+  public async leaveClan(): Promise<void> {
+    await this.client.post('/clans/leave');
+  }
+
+  public async joinClan(inviteCode: string): Promise<void> {
+    await this.client.post('/clans/join', null, {
+      params: { invite_code: inviteCode }
+    });
+  }
+
+  public async createClanInvite(): Promise<{ code: string }> {
+    const response = await this.client.post('/clans/invite');
+    return response.data;
+  }
+
+  public async kickClanMember(userId: number): Promise<void> {
+    await this.client.delete(`/clans/kick/${userId}`);
+  }
+
+  public async updateClan(name: string, tag: string, description: string): Promise<any> {
+    const response = await this.client.patch('/clans', {
+      name,
+      tag,
+      description
+    });
+    return response.data;
+  }
+
+  public async deleteClan(): Promise<void> {
+    await this.client.delete('/clans');
+  }
+
+  // Clan wars endpoints
+
+  public async createClanWar(clanId: number, defenderClanId: number): Promise<any> {
+    const response = await this.client.post(`/clans/war/${clanId}`, null, {
+      params: { defender_clan_id: defenderClanId }
+    });
+    return response.data;
+  }
+
+  public async getClanWar(warId: number): Promise<any> {
+    const response = await this.client.get(`/clans/war/${warId}`);
+    return response.data;
+  }
+
+  public async acceptClanWar(warId: number): Promise<void> {
+    await this.client.post(`/clans/war/${warId}/accept`);
+  }
+
+  public async declineClanWar(warId: number): Promise<void> {
+    await this.client.post(`/clans/war/${warId}/decline`);
+  }
+
+  public async setClanWarRoster(warId: number, playerIds: number[]): Promise<void> {
+    await this.client.post(`/clans/war/${warId}/roster`, {
+      clan_players: playerIds
+    });
+  }
+
+  public async playClanWar(warId: number): Promise<any> {
+    const response = await this.client.post(`/clans/war/${warId}/play`);
     return response.data;
   }
 

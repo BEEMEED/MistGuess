@@ -22,10 +22,9 @@ class Profile:
     
     @staticmethod
     async def NameEdit(db: AsyncSession, user_id: int, NewName: str):
-        
-        await UserRepository.update(db, user_id, {"name": NewName})
-        
         logger.info(f"User {user_id} changed name to {NewName}")
+        return await UserRepository.update(db, user_id, {"name": NewName})
+        
 
     @staticmethod
     async def AvatarEdit(db: AsyncSession, user_id: int, file: UploadFile):
@@ -58,6 +57,9 @@ class Profile:
         user = await UserRepository.get_by_id(db, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
+
+        clan_tag = await UserRepository.get_clan_tag(db, user)
+
         message = {
             "name": user.name,
             "avatar": user.avatar,
@@ -65,6 +67,9 @@ class Profile:
             "rank": user.rank,
             "role": user.role,
             "country_stats": user.country_stats or {},
+            "clan_id": user.clan_id,
+            "clan_role": user.clan_role,
+            "clan_tag": clan_tag,
         }
         lobbies = await LobbyRepository.get_by_user_id(db, user_id)
         message["lobbies"] = [{"code": lobby.invite_code, "host_id": lobby.host_id} for lobby in lobbies]

@@ -6,6 +6,7 @@ import { MistbornButton } from '../components/ui/MistbornButton';
 import { MistbornCard } from '../components/ui/MistbornCard';
 import { Avatar } from '../components/ui/Avatar';
 import { RankBadge } from '../components/ui/RankBadge';
+import { ClanTag } from '../components/ui/ClanTag';
 import { FogOverlay } from '../components/effects/FogOverlay';
 import { AshParticles } from '../components/effects/AshParticles';
 import './LobbyPage.css';
@@ -227,7 +228,10 @@ export const LobbyPage: React.FC = () => {
                 >
                   <Avatar src={player.avatar} size="small" />
                   <div className="player-info">
-                    <div className="player-name">{player.name}</div>
+                    <div className="player-name">
+                      {player.clan_tag && <ClanTag tag={player.clan_tag} size="small" />}
+                      {player.name}
+                    </div>
                     {player.rank && <RankBadge rank={player.rank} size="small" />}
                   </div>
                   {player.user_id === gameState.host && <div className="host-badge">Host</div>}

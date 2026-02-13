@@ -83,7 +83,17 @@ async def loginGoogleCallback(
         secure=False,
         max_age=30 * 24 * 60 * 60,
     )
-    return {"user_id": result["user_id"], "access_token": result["access_token"]}
+    
+    user = await UserRepository.get_by_id(db, result["user_id"])
+    clan_tag = await UserRepository.get_clan_tag(db, user) if user else None
+
+    return {
+        "user_id": result["user_id"],
+        "access_token": result["access_token"],
+        "clan_id": user.clan_id if user else None,
+        "clan_role": user.clan_role if user else None,
+        "clan_tag": clan_tag,
+    }
 
 
 

@@ -81,12 +81,16 @@ class Websocket_service:
 
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
+
+        clan_tag = await UserRepository.get_clan_tag(db, user)
+
         return {
             "user_id": user.id,
             "name": user.name,
             "avatar": user.avatar,
             "xp": user.xp,
             "rank": user.rank,
+            "clan_tag": clan_tag,
         }
 
     async def player_joined(
@@ -675,7 +679,7 @@ class Websocket_service:
                     "lon": current_location["lon"],
                     "url": current_location["url"],
                 },
-                "roundstart_time": game["RoundStartTime"],
+                "roundstart_time": game.get("RoundStartTime", int(time.time() * 1000)),
                 "timer": lobby.timer,
                 "hp": game["hp"],
             }

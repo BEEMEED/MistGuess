@@ -1,4 +1,4 @@
-import type { WSEvent, WSClientMessage } from '../types';
+import type { WSEvent, WSClientMessage } from '../types/index';
 
 const WS_BASE_URL = 'ws://localhost:8000';
 
@@ -12,6 +12,7 @@ class WebSocketService {
   private reconnectDelay = 3000;
   private lobbyCode: string | null = null;
   private token: string | null = null;
+  private isReconnecting = false;
 
   public connect(lobbyCode: string, token: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -26,6 +27,17 @@ class WebSocketService {
         this.ws.onopen = () => {
           console.log('WebSocket connected to lobby:', lobbyCode);
           this.reconnectAttempts = 0;
+
+          // If this was an automatic reconnect, send reconnect message
+          if (this.isReconnecting) {
+            console.log('Auto-reconnect successful, sending player_reconnect message');
+            this.isReconnecting = false;
+            // Send reconnect message after connection is established
+            setTimeout(() => {
+              this.send({ type: 'player_reconnect' });
+            }, 100);
+          }
+
           resolve();
         };
 
@@ -69,6 +81,7 @@ class WebSocketService {
       this.token
     ) {
       this.reconnectAttempts++;
+      this.isReconnecting = true;
       console.log(
         `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
       );
@@ -82,12 +95,14 @@ class WebSocketService {
       }, this.reconnectDelay);
     } else {
       console.log('Max reconnection attempts reached or no lobby/token available');
+      this.isReconnecting = false;
     }
   }
 
   public disconnect(): void {
     if (this.ws) {
       this.reconnectAttempts = this.maxReconnectAttempts; // Prevent reconnection
+      this.isReconnecting = false;
       this.ws.close();
       this.ws = null;
       this.lobbyCode = null;

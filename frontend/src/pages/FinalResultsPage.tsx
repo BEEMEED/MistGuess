@@ -11,7 +11,7 @@ import { RankBadge } from '../components/ui/RankBadge';
 import { RankUpNotification } from '../components/ui/RankUpNotification';
 import { RoundBreakdown } from '../components/game/RoundBreakdown';
 import { wsService } from '../services/websocket';
-import type { WSEvent } from '../types';
+import type { WSEvent } from '../types/index';
 import './FinalResultsPage.css';
 
 export const FinalResultsPage: React.FC = () => {

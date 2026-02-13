@@ -1,8 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from models.locations import Locations
+import logging
 from sqlalchemy.exc import IntegrityError
 import random
+logger = logging.getLogger(__name__)
 
 class LocationRepository:
     @staticmethod
@@ -14,9 +16,9 @@ class LocationRepository:
         return result.scalars().all()
     
     @staticmethod
-    async def add_location(db: AsyncSession, lat: float, lon: float, region: str):
+    async def add_location(db: AsyncSession, lat: float, lon: float, region: str, country: str):
         try:
-            location = Locations(lat=lat, lon=lon, region=region)
+            location = Locations(lat=lat, lon=lon, region=region, country=country)
             db.add(location)
             await db.commit()
             await db.refresh(location)
@@ -35,9 +37,22 @@ class LocationRepository:
         return result.scalar_one()
     
     @staticmethod
-    async def change_location(db: AsyncSession):
+    async def change_location(db: AsyncSession, id: int, update_data: dict):
         result = await db.execute(select(Locations).where(Locations.id == id))
-        return result.scalar_one_or_none()
+        result = result.scalar_one_or_none()
+        if result:
+            for key, value in update_data.items():
+                setattr(result, key, value)
+            try:
+                db.add(result)
+                await db.commit()
+                await db.refresh(result)
+                return result
+            except Exception as e:
+                await db.rollback()
+                logger.error(f"Failed to update location {result.id}: {e}")
+                raise
+
     
     @staticmethod
     async def get_by_id(db: AsyncSession, id: int):

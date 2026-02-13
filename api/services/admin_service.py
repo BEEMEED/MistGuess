@@ -3,8 +3,6 @@ from services.authorization import AuthService
 
 from config import config
 import logging
-import json
-from pika import BlockingConnection, ConnectionParameters
 from repositories.location_repository import LocationRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from repositories.user_repository import UserRepository
@@ -19,9 +17,9 @@ class Admin_Panel:
 
     @staticmethod
     async def Add_Location(
-        db: AsyncSession, admin_login: str, lat: float, lon: float, region: str
+        db: AsyncSession, admin_login: str, lat: float, lon: float, region: str, country: str
     ):
-        location = await LocationRepository.add_location(db, lat, lon, region)
+        location = await LocationRepository.add_location(db, lat, lon, region, country)
         if not location:
             raise HTTPException(status_code=400, detail="Failed to add location")
         return {"location_id": location.id}
@@ -88,49 +86,16 @@ class Admin_Panel:
         user = await UserRepository.get_by_id(db,id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        telegeramID = user.telegram
-        await UserRepository.delete(db,id)
-
-        if telegeramID != "null":
-
-            connection = BlockingConnection(ConnectionParameters("localhost"))
-            chanel = connection.channel()
-
-            message_send = {
-                "telegramID": telegeramID,
-                "text": f"Вы были забанены админом {admin_login} по причине: {reason}",
-            }
-            chanel.basic_publish(
-                routing_key="telegram_notification",
-                body=json.dumps(message_send),
-                exchange="",
-            )
-
+        await UserRepository.delete(db, id)
         logging.warning(f"Admin {admin_login} banned user {user.name} for {reason}")
 
-    @staticmethod
-    async def send_message_telegram(db: AsyncSession, admin_login: str, message: str, id: int):
+    # @staticmethod
+    # async def send_message_telegram(db: AsyncSession, admin_login: str, message: str, id: int):
 
-        user = await UserRepository.get_by_id(db,id)
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        telegramID = user.telegram
-        
-
-        if telegramID and telegramID != "":
-            connection = BlockingConnection(ConnectionParameters("localhost"))
-            chanel = connection.channel()
-
-            message_send = {
-                "telegramID": telegramID,
-                "text": f"⚠️новое сообщение от администратора\n{admin_login}: {message}",
-            }
-            chanel.basic_publish(
-                routing_key="telegram_notification",
-                body=json.dumps(message_send),
-                exchange="",
-            )
-        logging.info(f"Admin {admin_login} sent message to user {user.name}[{user.id}]: {message}")
+    #     user = await UserRepository.get_by_id(db,id)
+    #     if not user:
+    #         raise HTTPException(status_code=404, detail="User not found")
+    #     logging.info(f"Admin {admin_login} sent message to user {user.name}[{user.id}]: {message}")
 
     @staticmethod
     async def Change_Role(db: AsyncSession, admin_login: str, id: int):
