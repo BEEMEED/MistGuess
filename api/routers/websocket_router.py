@@ -9,6 +9,9 @@ from utils.dependencies import Dependies
 from services.authorization import AuthService
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
+from repositories.lobby_repository import LobbyRepository
+from database.database import asyncsession
+from starlette.websockets import WebSocketState
 
 
 dependies = Dependies()
@@ -29,9 +32,7 @@ async def GameStart(
         return
 
     try:
-        from database.database import asyncsession
         async with asyncsession() as db:
-            from repositories.lobby_repository import LobbyRepository
             lobby = await LobbyRepository.get_by_code(db, lobby_code)
             if not lobby:
                 await websocket.close(code=1008, reason="Lobby not found")
@@ -42,7 +43,6 @@ async def GameStart(
 
             await ws_service.player_joined(db, user_id, lobby_code, websocket)
             
-            from starlette.websockets import WebSocketState
             if websocket.client_state != WebSocketState.CONNECTED:
                 return
     except HTTPException:
@@ -61,10 +61,11 @@ async def GameStart(
         # rounds
         "round_start": lambda db, data: ws_service.RoundStarted(db,lobby_code),
         "round_end": lambda db, data: ws_service.RoundEnded(db,lobby_code),
+        # spectator
+        "spectate": lambda db, data: ws_service.camera_update(lobby_code, data, data["num_player"]),
         
         
     }
-    from database.database import asyncsession
     try:
         while True:
             data = await websocket.receive_json()
@@ -92,7 +93,7 @@ async def GameStart(
                     except Exception as e:
                         logger.error(f"failed to send disconnect {user_id}: {e}")
 
-        from database.database import asyncsession
+
         async def kick_task():
             async with asyncsession() as db:
                 await ws_service.kick_timer(db, user_id, lobby_code, websocket)
@@ -103,6 +104,69 @@ async def GameStart(
         import traceback
         logger.exception(traceback.format_exc())
 
-        from database.database import asyncsession
         async with asyncsession() as db:
             await ws_service.player_left(db, user_id, lobby_code, websocket)
+
+@router.websocket("/ws/{lobby_code}/spectate")
+async def spectate(websocket: WebSocket, lobby_code: str):
+    await websocket.accept()
+
+    token = websocket.query_params.get("token")
+
+    if not token:
+        await websocket.close(code=1008, reason="Missing token")
+        return
+
+    try:
+        async with asyncsession() as db:
+
+            lobby = await LobbyRepository.get_by_code(db, lobby_code)
+            if not lobby:
+                await websocket.close(code=1008, reason="Lobby not found")
+                return
+
+            await TokenManager.verifyToken(db, token)
+          
+            if websocket.client_state != WebSocketState.CONNECTED:
+                return
+    except HTTPException:
+        await websocket.close(code=1008, reason="Invalid token")
+        return
+    
+    if lobby_code not in ws_service.spectators:
+        ws_service.spectators[lobby_code] = []
+    ws_service.spectators[lobby_code].append(websocket)
+
+
+    try:
+        game = await ws_service._get_game(lobby_code)
+        if game:
+            current_index = game["current_location_index"]
+            current_location = game["locations"][current_index]
+            await websocket.send_json({
+                "type": "round_started",
+                "lat": current_location["lat"],
+                "lon": current_location["lon"],
+                "hp": game.get("hp", {}),
+            })
+        async with asyncsession() as db:
+            lobby_obj = await LobbyRepository.get_by_code(db, lobby_code)
+            if lobby_obj:
+                players_info = [await ws_service.user_GetInfo(db, uid) for uid in lobby_obj.users]
+                await websocket.send_json({"type": "player_joined", "players": players_info})
+    except Exception as e:
+        logger.error(f"Failed to send initial spectator state: {e}")
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        if lobby_code in ws_service.spectators and websocket in ws_service.spectators[lobby_code]:
+            ws_service.spectators[lobby_code].remove(websocket)
+    except Exception as e:
+        logger.error(f"Spectator WS error: {e}")
+        if lobby_code in ws_service.spectators and websocket in ws_service.spectators[lobby_code]:
+            ws_service.spectators[lobby_code].remove(websocket)
+    
+
+

@@ -16,6 +16,7 @@ the platform features skill based matchmaking, XP progression with ranks, clan s
 - **telegram integration** - connect account and receive notifications
 - **hp combat** - guess accuracy deals damage to opponent
 - **reconnection support** - rejoin games after disconnect
+- **spectator mode** - watch ongoing games live with real-time camera and position sync
 - **admin panel** - manage locations and users
 - **orders (clans)** - closed clans with invite system
 - **oredrs wars** - asynchronous 5v5 battles between clans

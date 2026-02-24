@@ -10,7 +10,7 @@ export interface CreateLobbyRequest {
 }
 
 export interface CreateLobbyResponse {
-  InviteCode: string;
+  invite_code: string;
 }
 
 export interface JoinLobbyRequest {
@@ -323,6 +323,7 @@ export interface LobbyContextType {
   sendMessage: (message: string) => void;
   chatMessages: Array<{ player: string; message: string; timestamp: number }>;
   isConnected: boolean;
+  isReconnecting: boolean;
   error: string | null;
   disconnectedPlayers: Set<string>;
 }

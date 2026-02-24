@@ -13,9 +13,20 @@ class WebSocketService {
   private lobbyCode: string | null = null;
   private token: string | null = null;
   private isReconnecting = false;
+  private permanentFailureHandlers: Array<(failedCode: string) => void> = [];
 
   public connect(lobbyCode: string, token: string): Promise<void> {
     return new Promise((resolve, reject) => {
+      // Close any existing connection silently before starting a new one
+      if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
+        this.ws.onopen = null;
+        this.ws.onmessage = null;
+        this.ws.onerror = null;
+        this.ws.onclose = null;
+        this.ws.close();
+        this.ws = null;
+      }
+
       this.lobbyCode = lobbyCode;
       this.token = token;
 
@@ -65,7 +76,7 @@ class WebSocketService {
 
         this.ws.onclose = (event) => {
           console.log('WebSocket closed:', event.code, event.reason);
-          this.handleReconnect();
+          this.handleReconnect(event.code);
         };
       } catch (error) {
         console.error('Failed to create WebSocket connection:', error);
@@ -74,7 +85,18 @@ class WebSocketService {
     });
   }
 
-  private handleReconnect(): void {
+  private handleReconnect(closeCode?: number): void {
+    // 1008 = policy violation (lobby not found / invalid token) — permanent failure, don't retry
+    if (closeCode === 1008) {
+      const failedCode = this.lobbyCode ?? '';
+      console.log('Permanent WebSocket failure (1008) for lobby:', failedCode);
+      this.isReconnecting = false;
+      this.lobbyCode = null;
+      this.token = null;
+      this.permanentFailureHandlers.forEach((h) => h(failedCode));
+      return;
+    }
+
     if (
       this.reconnectAttempts < this.maxReconnectAttempts &&
       this.lobbyCode &&
@@ -97,6 +119,13 @@ class WebSocketService {
       console.log('Max reconnection attempts reached or no lobby/token available');
       this.isReconnecting = false;
     }
+  }
+
+  public onPermanentDisconnect(handler: (failedCode: string) => void): () => void {
+    this.permanentFailureHandlers.push(handler);
+    return () => {
+      this.permanentFailureHandlers = this.permanentFailureHandlers.filter((h) => h !== handler);
+    };
   }
 
   public disconnect(): void {
@@ -174,6 +203,13 @@ class WebSocketService {
 
   public reconnect(): void {
     this.send({ type: 'player_reconnect' });
+  }
+
+  public sendCameraUpdate(heading: number, pitch: number, zoom: number, num_player: number, lat?: number, lng?: number): void {
+    const msg: any = { type: 'spectate', heading, pitch, zoom, num_player };
+    if (lat !== undefined) msg.lat = lat;
+    if (lng !== undefined) msg.lng = lng;
+    this.send(msg as WSClientMessage);
   }
 }
 

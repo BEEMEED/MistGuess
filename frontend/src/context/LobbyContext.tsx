@@ -36,7 +36,7 @@ const getLobbyFromStorage = (): string | null => {
     const attemptTime = localStorage.getItem(STORAGE_KEYS.RECONNECT_ATTEMPT);
 
     // Only reconnect if saved within last 30 minutes
-    if (lobbyCode && attemptTime) {
+    if (lobbyCode && lobbyCode !== 'undefined' && attemptTime) {
       const timeDiff = Date.now() - parseInt(attemptTime);
       if (timeDiff < 30 * 60 * 1000) { // 30 minutes
         return lobbyCode;
@@ -77,6 +77,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<Array<{ player: string; message: string; timestamp: number }>>([]);
   const [disconnectedPlayers, setDisconnectedPlayers] = useState<Set<string>>(new Set());
@@ -329,6 +330,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
         break;
 
       case 'reconnect_succes':
+        setIsReconnecting(false);
         console.log('Reconnect successful, restoring game state:', event);
         console.log('Game state details:', {
           hasGameState: !!event.game_state,
@@ -381,6 +383,26 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
     return unsubscribe;
   }, [handleWSEvent]);
 
+  // Clear localStorage and reset state when server permanently rejects the connection (1008)
+  useEffect(() => {
+    const unsubscribe = wsService.onPermanentDisconnect((failedCode: string) => {
+      console.log('[LobbyContext] Permanent disconnect for lobby:', failedCode);
+      setGameState((prev) => {
+        // If a different lobby is now active, don't clobber it
+        if (prev && prev.lobbyCode !== failedCode) {
+          console.log('[LobbyContext] Ignoring — different lobby active:', prev.lobbyCode);
+          return prev;
+        }
+        // Our active lobby (or no lobby) failed permanently — clean up
+        clearLobbyFromStorage();
+        setIsConnected(false);
+        setIsReconnecting(false);
+        return null;
+      });
+    });
+    return unsubscribe;
+  }, []);
+
   // Auto-reconnect on page reload
   useEffect(() => {
     // Wait for user to be loaded
@@ -427,7 +449,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
     try {
       setError(null);
       const response = await apiService.createLobby();
-      const inviteCode = response.InviteCode;
+      const inviteCode = response.invite_code;
 
       await wsService.connect(inviteCode, user.token);
       setIsConnected(true);
@@ -490,8 +512,11 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
       }
 
       // Always connect to WebSocket (whether HTTP join succeeded or not)
+      if (isReconnect) setIsReconnecting(true);
       await wsService.connect(inviteCode, user.token);
       setIsConnected(true);
+      // In case a concurrent reconnect set isReconnecting, reset it for normal joins
+      if (!isReconnect) setIsReconnecting(false);
 
       // Save lobby to localStorage for reconnection after page reload
       saveLobbyToStorage(inviteCode);
@@ -643,6 +668,7 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
     sendMessage,
     chatMessages,
     isConnected,
+    isReconnecting,
     error,
     disconnectedPlayers,
   };

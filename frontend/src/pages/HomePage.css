@@ -114,6 +114,138 @@
   transform: scale(1.1);
 }
 
+/* Spectate Button */
+.home-page__spectate-btn {
+  position: fixed;
+  top: 20px;
+  left: 200px;
+  z-index: 100;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(10, 10, 15, 0.8);
+  border: 1px solid rgba(147, 112, 219, 0.5);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(147, 112, 219, 0.3);
+  backdrop-filter: blur(5px);
+}
+
+.home-page__spectate-btn:hover {
+  background: rgba(147, 112, 219, 0.2);
+  border-color: rgba(147, 112, 219, 0.9);
+  box-shadow: 0 0 30px rgba(147, 112, 219, 0.5);
+  transform: scale(1.1);
+}
+
+/* Spectate Overlay */
+.spectate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.spectate-overlay__card {
+  background: rgba(10, 10, 20, 0.95);
+  border: 1px solid rgba(147, 112, 219, 0.4);
+  border-radius: 16px;
+  padding: 32px 36px;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 0 40px rgba(147, 112, 219, 0.2);
+}
+
+.spectate-overlay__title {
+  color: #c4a8f5;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+.spectate-overlay__hint {
+  color: rgba(196, 168, 245, 0.6);
+  font-size: 13px;
+  margin: 0;
+}
+
+.spectate-overlay__input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(147, 112, 219, 0.4);
+  border-radius: 8px;
+  color: #e8e0f0;
+  font-size: 15px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  letter-spacing: 1px;
+}
+
+.spectate-overlay__input:focus {
+  border-color: rgba(147, 112, 219, 0.8);
+}
+
+.spectate-overlay__input::placeholder {
+  color: rgba(196, 168, 245, 0.3);
+}
+
+.spectate-overlay__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.spectate-overlay__btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.spectate-overlay__btn--watch {
+  background: rgba(147, 112, 219, 0.25);
+  border-color: rgba(147, 112, 219, 0.6);
+  color: #c4a8f5;
+}
+
+.spectate-overlay__btn--watch:hover:not(:disabled) {
+  background: rgba(147, 112, 219, 0.4);
+  border-color: #9370db;
+}
+
+.spectate-overlay__btn--watch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.spectate-overlay__btn--cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.spectate-overlay__btn--cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+
 @keyframes guidePulse {
   0%, 100% {
     box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);

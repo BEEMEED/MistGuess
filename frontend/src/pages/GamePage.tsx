@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLobby } from '../context/LobbyContext';
@@ -10,6 +10,7 @@ import { GuessMap } from '../components/game/GuessMap';
 import { Toast } from '../components/ui/Toast';
 import { RoundResults } from '../components/game/RoundResults';
 import { ChatBox } from '../components/ui/ChatBox';
+import { wsService } from '../services/websocket';
 import './GamePage.css';
 
 interface ToastNotification {
@@ -19,7 +20,7 @@ interface ToastNotification {
 
 export const GamePage: React.FC = () => {
   const { user } = useAuth();
-  const { gameState, submitGuess, endRound, sendMessage, chatMessages } = useLobby();
+  const { gameState, submitGuess, endRound, sendMessage, chatMessages, isReconnecting } = useLobby();
   const navigate = useNavigate();
   const { code } = useParams<{ code: string }>();
 
@@ -32,6 +33,21 @@ export const GamePage: React.FC = () => {
   const [lastShownResultRound, setLastShownResultRound] = useState<number>(0);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const endRoundRef = React.useRef(endRound);
+  const lastCameraUpdateRef = useRef<number>(0);
+  const panoramaPositionRef = useRef<{ lat: number; lng: number } | null>(null);
+
+  const handlePositionChange = useCallback((lat: number, lng: number) => {
+    panoramaPositionRef.current = { lat, lng };
+  }, []);
+
+  const handlePovChange = useCallback((heading: number, pitch: number, zoom: number) => {
+    const now = Date.now();
+    if (now - lastCameraUpdateRef.current > 200 && user?.user_id) {
+      lastCameraUpdateRef.current = now;
+      const pos = panoramaPositionRef.current;
+      wsService.sendCameraUpdate(heading, pitch, zoom, user.user_id, pos?.lat, pos?.lng);
+    }
+  }, [user?.user_id]);
 
   // Update ref when endRound changes
   useEffect(() => {
@@ -39,11 +55,12 @@ export const GamePage: React.FC = () => {
   }, [endRound]);
 
   useEffect(() => {
-    // Don't redirect if game ended or showing results
-    if (!gameState?.isGameStarted && !gameState?.isGameEnded && !showingResults) {
+    // Don't redirect while reconnecting or if gameState hasn't loaded yet
+    if (isReconnecting || gameState === null) return;
+    if (!gameState.isGameStarted && !gameState.isGameEnded && !showingResults) {
       navigate(`/lobby/${code}`);
     }
-  }, [gameState?.isGameStarted, gameState?.isGameEnded, showingResults, navigate, code]);
+  }, [isReconnecting, gameState, gameState?.isGameStarted, gameState?.isGameEnded, showingResults, navigate, code]);
 
   useEffect(() => {
     // Navigate to final results when game ends
@@ -275,6 +292,8 @@ export const GamePage: React.FC = () => {
               key={gameState.currentLocationIndex}
               lat={gameState.currentLocation.lat}
               lon={gameState.currentLocation.lon}
+              onPovChange={handlePovChange}
+              onPositionChange={handlePositionChange}
             />
           ) : (
             <div className="loading-streetview">

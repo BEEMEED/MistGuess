@@ -19,6 +19,8 @@ export const HomePage: React.FC = () => {
   const [distance, setDistance] = useState(0);
   const [points, setPoints] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSpectate, setShowSpectate] = useState(false);
+  const [spectateCode, setSpectateCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [mapsLoaded, setMapsLoaded] = useState(false);
@@ -313,6 +315,11 @@ export const HomePage: React.FC = () => {
         ⚔️
       </button>
 
+      {/* Spectate Button */}
+      <button className="home-page__spectate-btn" onClick={() => setShowSpectate(true)} title="Spectate a game">
+        👁
+      </button>
+
       {/* Settings Button - always visible */}
       <button className="home-page__settings-btn" onClick={() => setShowSettings(true)}>
         ⚙️
@@ -352,6 +359,44 @@ export const HomePage: React.FC = () => {
           points={points}
           onContinue={handleContinue}
         />
+      )}
+
+      {/* Spectate Overlay */}
+      {showSpectate && (
+        <div className="spectate-overlay" onClick={() => setShowSpectate(false)}>
+          <div className="spectate-overlay__card" onClick={e => e.stopPropagation()}>
+            <h2 className="spectate-overlay__title">👁 Spectate Game</h2>
+            <p className="spectate-overlay__hint">Enter the lobby invite code to watch</p>
+            <input
+              className="spectate-overlay__input"
+              type="text"
+              placeholder="Invite code..."
+              value={spectateCode}
+              onChange={e => setSpectateCode(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && spectateCode.trim()) {
+                  navigate(`/spectate/${spectateCode.trim()}`);
+                }
+              }}
+              autoFocus
+            />
+            <div className="spectate-overlay__actions">
+              <button
+                className="spectate-overlay__btn spectate-overlay__btn--watch"
+                disabled={!spectateCode.trim()}
+                onClick={() => navigate(`/spectate/${spectateCode.trim()}`)}
+              >
+                Watch
+              </button>
+              <button
+                className="spectate-overlay__btn spectate-overlay__btn--cancel"
+                onClick={() => setShowSpectate(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Settings Overlay */}

@@ -131,6 +131,8 @@ class ClanRepository:
         result_clan_invite = result.scalar_one_or_none()
 
         if result_clan_invite:
+            if result_clan_invite.expires_at is None:
+                return
             if result_clan_invite.expires_at < datetime.now():
                 return
 

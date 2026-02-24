@@ -25,10 +25,11 @@ locat = LocationService()
 
 class Websocket_service:
     def __init__(self):
-        self.connections: dict[str, list[tuple[int, WebSocket]]] = ({})  # invitecode: [(login, ws)]
+        self.connections: dict[str, list[tuple[int, WebSocket]]] = {}  # invitecode: [(login, ws)]
         # self.games: dict[str, dict] = {}
         self.timers = {}  # invitecode: timer
         # self.disconnects: dict[str,dict[int, float]] = {}  # invitecode: [(login, timer)]
+        self.spectators: dict[str, list[WebSocket]] = {}
 
 
     @staticmethod
@@ -250,6 +251,13 @@ class Websocket_service:
                 await ws.send_json(message)
             except Exception as e:
                 logger.error(f"Failed to send game_started to connection: {e}")
+
+        for ws in self.spectators.get(InviteCode, []):
+            try:
+                await ws.send_json(message)
+            except Exception as e:
+                logger.error(f"Failed to send game_started to spectators connection: {e}")
+
         logger.info(f"Game started for {InviteCode}")
 
     async def RoundStarted(self, db: AsyncSession, InviteCode: str):
@@ -293,6 +301,12 @@ class Websocket_service:
                     await ws.send_json(message)
                 except Exception as e:
                     logger.error(f"Failed to send round_started to connection: {e}")
+            
+            for ws in self.spectators.get(InviteCode, []):
+                try:
+                    await ws.send_json(message)
+                except Exception as e:
+                    logger.error(f"Failed to send round_started to spectators connection: {e}")
 
         if InviteCode in self.timers:
             self.timers[InviteCode].cancel()
@@ -435,6 +449,12 @@ class Websocket_service:
                     await ws.send_json(message)
                 except Exception as e:
                     logger.error(f"Failed to send round_ended to connection: {e}")
+            
+            for ws in self.spectators.get(InviteCode, []):
+                try:
+                    await ws.send_json(message)
+                except Exception as e:
+                    logger.error(f"Failed to send round_ended to spectators connection: {e}")
 
         game["current_location_index"] += 1
         await r.setex(f"game:{InviteCode}", 3600, json.dumps(game))
@@ -498,6 +518,11 @@ class Websocket_service:
                     await ws.send_json(message)
                 except Exception as e:
                     logger.error(f"Failed to send game_ended to connection: {e}")
+            for ws in self.spectators.get(InviteCode, []):
+                try:
+                    await ws.send_json(message)
+                except Exception as e:
+                    logger.error(f"Failed to send game_ended to spectators connection: {e}")
 
         # --- xp rewards ---
         player_ids = [login for login, _ in self.connections[InviteCode]]
@@ -724,5 +749,28 @@ class Websocket_service:
         await ClanWarService.submit_score(db, war_id, user_id, total_score)
         await r.delete(f"game:{lobbycode}")
 
+    # --- spectate ---
+
+    async def camera_update(self, lobby_code: str, data: dict, num_player: int):
+        if lobby_code not in self.spectators:
+            return
+        message = {
+            "type": "spectate",
+            "heading": data.get("heading"),
+            "pitch": data.get("pitch"),
+            "zoom": data.get("zoom"),
+            "num_player": num_player,
+        }
+        if data.get("lat") is not None:
+            message["lat"] = data.get("lat")
+        if data.get("lng") is not None:
+            message["lng"] = data.get("lng")
+        for ws in self.spectators[lobby_code]:
+            try:
+                await ws.send_json(message)
+            except Exception:
+                pass
+
+# todo add spectator for opponent in games and maybe add option to watch live games in lobby list
 
 ws_service = Websocket_service()

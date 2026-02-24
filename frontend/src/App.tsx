@@ -18,6 +18,7 @@ import { LeaderboardPage } from './pages/LeaderboardPage';
 import { ClansPage } from './pages/ClansPage';
 import { ClanDetailPage } from './pages/ClanDetailPage';
 import { ClanWarPage } from './pages/ClanWarPage';
+import { SpectatorPage } from './pages/SpectatorPage';
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
               <Route path="/game/:code" element={<GamePage />} />
               <Route path="/results/:code" element={<RoundResultsPage />} />
               <Route path="/final/:code" element={<FinalResultsPage />} />
+              <Route path="/spectate/:code" element={<SpectatorPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </MatchmakingProvider>
