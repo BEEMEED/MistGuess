@@ -211,6 +211,13 @@ class WebSocketService {
     if (lng !== undefined) msg.lng = lng;
     this.send(msg as WSClientMessage);
   }
+
+  public sendGuessPreview(lat: number | null, lng: number | null, num_player: number): void {
+    const msg: any = { type: 'guess_preview', lat, lng, num_player };
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(msg));
+    }
+  }
 }
 
 // Export singleton instance

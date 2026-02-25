@@ -63,6 +63,7 @@ async def GameStart(
         "round_end": lambda db, data: ws_service.RoundEnded(db,lobby_code),
         # spectator
         "spectate": lambda db, data: ws_service.camera_update(lobby_code, data, data["num_player"]),
+        "guess_preview": lambda db, data: ws_service.guess_preview(data, lobby_code),
         
         
     }
@@ -83,6 +84,17 @@ async def GameStart(
         if lobby_code not in ws_service.connections:
             return
 
+        ws_service.connections[lobby_code] = [
+            (uid, ws) for uid, ws in ws_service.connections[lobby_code] if ws != websocket
+        ]
+
+        still_connected = any(
+            uid == user_id for uid, _ in ws_service.connections.get(lobby_code, [])
+        )
+        if still_connected:
+            logger.info(f"User {user_id} stale WS closed but still connected to {lobby_code}")
+            return
+
         await r.setex(f"disconnect:{lobby_code}:{user_id}", 180, str(time.time()))
 
         if lobby_code in ws_service.connections:
@@ -92,7 +104,6 @@ async def GameStart(
                         await ws.send_json({"type": "player_disconnected", "player": user_id})
                     except Exception as e:
                         logger.error(f"failed to send disconnect {user_id}: {e}")
-
 
         async def kick_task():
             async with asyncsession() as db:

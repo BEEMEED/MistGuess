@@ -113,9 +113,14 @@ class Websocket_service:
 
         if InviteCode not in self.connections:
             self.connections[InviteCode] = []
+
+
+        self.connections[InviteCode] = [
+            (uid, ws) for uid, ws in self.connections[InviteCode] if uid != user_id
+        ]
+
         self.connections[InviteCode].append((user_id, websocket))
         active_websockets.inc()
-
 
         assert lobby
         players_info = [await self.user_GetInfo(db, uid) for uid in lobby.users]
@@ -131,6 +136,38 @@ class Websocket_service:
                 await ws.send_json(message)
             except Exception as e:
                 logger.error(f"Failed to send player_joined to connection: {e}")
+
+        game = await self._get_game(InviteCode)
+        if game:
+            current_index = game["current_location_index"]
+            current_index_str = str(current_index)
+            current_location = game["locations"][current_index]
+
+            rejoin_msg = {
+                "type": "reconnect_succes",
+                "host": lobby.host_id,
+                "players": players_info,
+                "game_state": {
+                    "current_location_index": current_index,
+                    "locations": {
+                        "lat": current_location["lat"],
+                        "lon": current_location["lon"],
+                        "url": current_location["url"],
+                    },
+                    "roundstart_time": game.get("RoundsStartTime", int(time.time() * 1000)),
+                    "timer": lobby.timer,
+                    "hp": game["hp"],
+                    "player_guess": [
+                        g["player"]
+                        for g in game.get("guesses", {}).get(current_index_str, [])
+                    ],
+                },
+            }
+            try:
+                await websocket.send_json(rejoin_msg)
+            except Exception as e:
+                logger.error(f"Failed to send game state on rejoin: {e}")
+
         logger.info(f"{user_id} joined {InviteCode}")
 
     async def player_left(
@@ -770,6 +807,22 @@ class Websocket_service:
                 await ws.send_json(message)
             except Exception:
                 pass
+
+    async def guess_preview(self, data: dict, lobby_code: str):
+        if lobby_code not in self.spectators:
+            return
+        message = {
+            "type": "guess_preview",
+            "lat": data.get("lat"),
+            "lng": data.get("lng"),
+            "num_player": data.get("num_player"),
+        }
+        for ws in self.spectators[lobby_code]:
+            try:
+                await ws.send_json(message)
+            except Exception:
+                pass
+        
 
 # todo add spectator for opponent in games and maybe add option to watch live games in lobby list
 

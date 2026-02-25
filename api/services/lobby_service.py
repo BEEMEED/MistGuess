@@ -10,7 +10,6 @@ from repositories.location_repository import LocationRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from repositories.user_repository import UserRepository
 from repositories.lobby_repository import LobbyRepository
-from repositories.location_repository import LocationRepository
 
 logger = logging.getLogger(__name__)
 

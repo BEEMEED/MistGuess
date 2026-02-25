@@ -20,6 +20,12 @@ declare global {
 export const StreetViewPanorama: React.FC<StreetViewPanoramaProps> = ({ lat, lon, onPovChange, onPositionChange, externalPov, externalPosition, disableControls }) => {
   const panoramaRef = useRef<HTMLDivElement>(null);
   const panoramaInstanceRef = useRef<any>(null);
+  // Keep refs so async init callback always reads the latest values
+  const disableControlsRef = useRef<boolean>(!!disableControls);
+  const externalPovRef = useRef(externalPov);
+  const externalPositionRef = useRef(externalPosition);
+  const onPovChangeRef = useRef(onPovChange);
+  const onPositionChangeRef = useRef(onPositionChange);
 
   useEffect(() => {
     const initPanorama = () => {
@@ -57,27 +63,44 @@ export const StreetViewPanorama: React.FC<StreetViewPanoramaProps> = ({ lat, lon
 
             panoramaInstanceRef.current = panorama;
 
-            if (onPovChange) {
-              panorama.addListener('pov_changed', () => {
-                const pov = panorama.getPov();
-                onPovChange(pov.heading, pov.pitch, panorama.getZoom());
-              });
+            // Apply the CURRENT disableControls value — it may have changed
+            // since this async callback started (e.g. new round reset hasGuessed)
+            panorama.setOptions({
+              zoomControl: !disableControlsRef.current,
+              linksControl: !disableControlsRef.current,
+              panControl: !disableControlsRef.current,
+              clickToGo: !disableControlsRef.current,
+              scrollwheel: !disableControlsRef.current,
+            });
+
+            // Apply any pending external state that arrived before panorama was ready
+            if (externalPovRef.current) {
+              panorama.setPov({ heading: externalPovRef.current.heading, pitch: externalPovRef.current.pitch });
+              panorama.setZoom(externalPovRef.current.zoom);
+            }
+            if (externalPositionRef.current) {
+              panorama.setPosition(externalPositionRef.current);
             }
 
-            if (onPositionChange || onPovChange) {
-              panorama.addListener('position_changed', () => {
-                const pos = panorama.getPosition();
-                if (!pos) return;
-                if (onPositionChange) {
-                  onPositionChange(pos.lat(), pos.lng());
-                }
-                // Also fire pov update so spectators get position + current heading
-                if (onPovChange) {
-                  const pov = panorama.getPov();
-                  onPovChange(pov.heading, pov.pitch, panorama.getZoom());
-                }
-              });
-            }
+            // Always add listeners — use refs so they pick up the latest
+            // callback even if props changed while getPanorama was loading
+            panorama.addListener('pov_changed', () => {
+              if (!onPovChangeRef.current) return;
+              const pov = panorama.getPov();
+              onPovChangeRef.current(pov.heading, pov.pitch, panorama.getZoom());
+            });
+
+            panorama.addListener('position_changed', () => {
+              const pos = panorama.getPosition();
+              if (!pos) return;
+              if (onPositionChangeRef.current) {
+                onPositionChangeRef.current(pos.lat(), pos.lng());
+              }
+              if (onPovChangeRef.current) {
+                const pov = panorama.getPov();
+                onPovChangeRef.current(pov.heading, pov.pitch, panorama.getZoom());
+              }
+            });
           } else {
             if (panoramaRef.current) {
               panoramaRef.current.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:white;font-size:18px;">No Street View available</div>';
@@ -101,7 +124,25 @@ export const StreetViewPanorama: React.FC<StreetViewPanoramaProps> = ({ lat, lon
     }
   }, [lat, lon]);
 
+  // Keep callback refs in sync with latest props
+  useEffect(() => { onPovChangeRef.current = onPovChange; }, [onPovChange]);
+  useEffect(() => { onPositionChangeRef.current = onPositionChange; }, [onPositionChange]);
+
+  // Reactively update controls when disableControls prop changes
   useEffect(() => {
+    disableControlsRef.current = !!disableControls;
+    if (!panoramaInstanceRef.current) return;
+    panoramaInstanceRef.current.setOptions({
+      zoomControl: !disableControls,
+      linksControl: !disableControls,
+      panControl: !disableControls,
+      clickToGo: !disableControls,
+      scrollwheel: !disableControls,
+    });
+  }, [disableControls]);
+
+  useEffect(() => {
+    externalPovRef.current = externalPov;
     if (externalPov && panoramaInstanceRef.current) {
       panoramaInstanceRef.current.setPov({ heading: externalPov.heading, pitch: externalPov.pitch });
       panoramaInstanceRef.current.setZoom(externalPov.zoom);
@@ -109,6 +150,7 @@ export const StreetViewPanorama: React.FC<StreetViewPanoramaProps> = ({ lat, lon
   }, [externalPov]);
 
   useEffect(() => {
+    externalPositionRef.current = externalPosition;
     if (externalPosition && panoramaInstanceRef.current) {
       panoramaInstanceRef.current.setPosition(externalPosition);
     }

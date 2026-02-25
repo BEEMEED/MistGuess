@@ -32,9 +32,13 @@ export const GamePage: React.FC = () => {
   const [roundEndTriggered, setRoundEndTriggered] = useState(false);
   const [lastShownResultRound, setLastShownResultRound] = useState<number>(0);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [opponentPov, setOpponentPov] = useState<{ heading: number; pitch: number; zoom: number } | null>(null);
+  const [opponentPosition, setOpponentPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [opponentGuessPreview, setOpponentGuessPreview] = useState<{ lat: number; lng: number } | null>(null);
   const endRoundRef = React.useRef(endRound);
   const lastCameraUpdateRef = useRef<number>(0);
   const panoramaPositionRef = useRef<{ lat: number; lng: number } | null>(null);
+  const spectateWsRef = useRef<WebSocket | null>(null);
 
   const handlePositionChange = useCallback((lat: number, lng: number) => {
     panoramaPositionRef.current = { lat, lng };
@@ -42,7 +46,7 @@ export const GamePage: React.FC = () => {
 
   const handlePovChange = useCallback((heading: number, pitch: number, zoom: number) => {
     const now = Date.now();
-    if (now - lastCameraUpdateRef.current > 200 && user?.user_id) {
+    if (now - lastCameraUpdateRef.current > 100 && user?.user_id) {
       lastCameraUpdateRef.current = now;
       const pos = panoramaPositionRef.current;
       wsService.sendCameraUpdate(heading, pitch, zoom, user.user_id, pos?.lat, pos?.lng);
@@ -53,6 +57,58 @@ export const GamePage: React.FC = () => {
   useEffect(() => {
     endRoundRef.current = endRound;
   }, [endRound]);
+
+  // Broadcast guess marker position to spectators in real-time
+  useEffect(() => {
+    if (!user?.user_id) return;
+    wsService.sendGuessPreview(
+      guessLocation?.lat ?? null,
+      guessLocation?.lng ?? null,
+      user.user_id
+    );
+  }, [guessLocation, user?.user_id]);
+
+  // Connect to spectate WS to watch opponent after submitting guess
+  useEffect(() => {
+    if (!hasGuessed || !code || !user) {
+      if (spectateWsRef.current) {
+        spectateWsRef.current.close();
+        spectateWsRef.current = null;
+      }
+      setOpponentPov(null);
+      setOpponentPosition(null);
+      setOpponentGuessPreview(null);
+      return;
+    }
+
+    const ws = new WebSocket(`ws://localhost:8000/ws/${code}/spectate?token=${user.token}`);
+    spectateWsRef.current = ws;
+
+    ws.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.num_player === user.user_id) return;
+        if (data.type === 'spectate') {
+          setOpponentPov({ heading: data.heading, pitch: data.pitch, zoom: data.zoom });
+          if (data.lat != null && data.lng != null) {
+            setOpponentPosition({ lat: data.lat, lng: data.lng });
+          }
+        } else if (data.type === 'guess_preview') {
+          setOpponentGuessPreview(
+            data.lat != null && data.lng != null ? { lat: data.lat, lng: data.lng } : null
+          );
+        }
+      } catch {}
+    };
+
+    return () => {
+      ws.close();
+      spectateWsRef.current = null;
+      setOpponentPov(null);
+      setOpponentPosition(null);
+      setOpponentGuessPreview(null);
+    };
+  }, [hasGuessed, code, user?.token, user?.user_id]);
 
   useEffect(() => {
     // Don't redirect while reconnecting or if gameState hasn't loaded yet
@@ -178,6 +234,7 @@ export const GamePage: React.FC = () => {
   const isHost = gameState.host === user.user_id;
   const allPlayersGuessed =
     gameState.playersGuessed.length === gameState.players.length;
+  const opponent = gameState.players.find(p => p.user_id !== user.user_id);
 
   useEffect(() => {
     if (isHost && allPlayersGuessed && gameState.isGameStarted && !roundEndTriggered && !showingResults) {
@@ -287,13 +344,19 @@ export const GamePage: React.FC = () => {
 
       <div className="game-content">
         <div className="streetview-panel-fullscreen">
+          {hasGuessed && !allPlayersGuessed && (
+            <div className="watching-opponent-badge">👁 Watching {opponent?.name || 'opponent'}</div>
+          )}
           {gameState.currentLocation ? (
             <StreetViewPanorama
               key={gameState.currentLocationIndex}
               lat={gameState.currentLocation.lat}
               lon={gameState.currentLocation.lon}
-              onPovChange={handlePovChange}
-              onPositionChange={handlePositionChange}
+              onPovChange={hasGuessed ? undefined : handlePovChange}
+              onPositionChange={hasGuessed ? undefined : handlePositionChange}
+              externalPov={hasGuessed ? opponentPov : undefined}
+              externalPosition={hasGuessed ? opponentPosition : undefined}
+              disableControls={hasGuessed}
             />
           ) : (
             <div className="loading-streetview">
@@ -303,11 +366,11 @@ export const GamePage: React.FC = () => {
           )}
         </div>
 
-        {/* Mini map with hover expand */}
+        {/* Mini map: own guess before submitting, opponent's guess preview while waiting */}
         <GuessMap
           key={mapKey}
-          onGuess={handleMapGuess}
-          guessLocation={guessLocation}
+          onGuess={hasGuessed ? () => {} : handleMapGuess}
+          guessLocation={hasGuessed ? opponentGuessPreview : guessLocation}
           hasGuessed={hasGuessed}
         />
 

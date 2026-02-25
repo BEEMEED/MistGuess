@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { StreetViewPanorama } from '../components/game/StreetViewPanorama';
+import { GuessMap } from '../components/game/GuessMap';
 import { FogOverlay } from '../components/effects/FogOverlay';
 import './SpectatorPage.css';
 
@@ -33,6 +34,7 @@ export const SpectatorPage: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [status, setStatus] = useState<'waiting' | 'ingame' | 'ended'>('waiting');
   const [selectedPlayer, setSelectedPlayer] = useState<number | null>(null);
+  const [guessPreview, setGuessPreview] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     if (!user || !code) return;
@@ -53,10 +55,15 @@ export const SpectatorPage: React.FC = () => {
             setPlayerPosition({ lat: data.lat, lng: data.lng });
           }
         }
+      } else if (data.type === 'guess_preview') {
+        if (selectedPlayerRef.current === null || data.num_player === selectedPlayerRef.current) {
+          setGuessPreview(data.lat != null && data.lng != null ? { lat: data.lat, lng: data.lng } : null);
+        }
       } else if (data.type === 'round_started') {
         setLocation({ lat: data.lat, lon: data.lon });
         setPlayerPosition(null);
         setPov(null);
+        setGuessPreview(null);
         setStatus('ingame');
         if (data.hp) setHp(data.hp);
       } else if (data.type === 'game_started') {
@@ -65,8 +72,12 @@ export const SpectatorPage: React.FC = () => {
       } else if (data.type === 'player_joined') {
         const newPlayers: Player[] = data.players || [];
         setPlayers(newPlayers);
-        // Auto-select first player if none selected
-        setSelectedPlayer(prev => prev === null && newPlayers.length > 0 ? newPlayers[0].user_id : prev);
+        // Auto-select opponent (first player that's not the current user)
+        setSelectedPlayer(prev => {
+          if (prev !== null) return prev;
+          const opponent = newPlayers.find(p => p.user_id !== user?.user_id);
+          return opponent ? opponent.user_id : (newPlayers.length > 0 ? newPlayers[0].user_id : null);
+        });
       } else if (data.type === 'round_ended') {
         setHp(data.hp || {});
       } else if (data.type === 'game_ended') {
@@ -97,7 +108,7 @@ export const SpectatorPage: React.FC = () => {
       {/* HP bars + player switcher */}
       {players.length > 0 && (
         <div className="spectator-hp-container">
-          {players.map((p) => {
+          {players.filter(p => p.user_id !== user?.user_id).map((p) => {
             const playerHp = hp[p.user_id] || hp[String(p.user_id)] || 0;
             const pct = Math.max(0, (playerHp / 6000) * 100);
             const isWatching = selectedPlayer === p.user_id;
@@ -105,7 +116,7 @@ export const SpectatorPage: React.FC = () => {
               <div
                 key={p.user_id}
                 className={`spectator-hp-panel ${isWatching ? 'spectator-hp-panel--active' : ''}`}
-                onClick={() => { setSelectedPlayer(p.user_id); setPlayerPosition(null); }}
+                onClick={() => { setSelectedPlayer(p.user_id); setPlayerPosition(null); setGuessPreview(null); }}
                 title={`Watch ${p.name}`}
               >
                 <img
@@ -130,6 +141,15 @@ export const SpectatorPage: React.FC = () => {
             );
           })}
         </div>
+      )}
+
+      {/* Guess preview map */}
+      {status === 'ingame' && (
+        <GuessMap
+          onGuess={() => {}}
+          guessLocation={guessPreview}
+          hasGuessed={true}
+        />
       )}
 
       {/* Street View */}

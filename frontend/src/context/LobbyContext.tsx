@@ -360,12 +360,14 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
             return {
               ...baseState,
               isGameStarted: true,
-              currentRound: event.game_state.current_round,
+              currentRound: event.game_state.current_location_index || 0,
+              currentLocationIndex: event.game_state.current_location_index || 0,
               currentLocation: {
                 lat: event.game_state.locations.lat,
                 lon: event.game_state.locations.lon,
                 url: event.game_state.locations.url,
               },
+              hp: event.game_state.hp || {},
               playersGuessed: event.game_state.player_guess || [],
               roundTimer: event.game_state.timer,
               roundStartTime: event.game_state.roundstart_time,
@@ -511,21 +513,8 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
         }
       }
 
-      // Always connect to WebSocket (whether HTTP join succeeded or not)
-      if (isReconnect) setIsReconnecting(true);
-      await wsService.connect(inviteCode, user.token);
-      setIsConnected(true);
-      // In case a concurrent reconnect set isReconnecting, reset it for normal joins
-      if (!isReconnect) setIsReconnecting(false);
-
-      // Save lobby to localStorage for reconnection after page reload
-      saveLobbyToStorage(inviteCode);
-
-      // If reconnecting, send reconnect message
-      if (isReconnect) {
-        wsService.reconnect();
-      }
-
+      // Set initial gameState BEFORE connecting WS so that events (player_joined,
+      // game_started, etc.) arriving immediately after onopen are never dropped.
       setGameState({
         lobbyCode: inviteCode,
         players: [{
@@ -546,7 +535,23 @@ export const LobbyProvider: React.FC<LobbyProviderProps> = ({ children }) => {
         finalResults: null,
         rankUps: [],
       });
+
+      // Always connect to WebSocket (whether HTTP join succeeded or not)
+      if (isReconnect) setIsReconnecting(true);
+      await wsService.connect(inviteCode, user.token);
+      setIsConnected(true);
+      // In case a concurrent reconnect set isReconnecting, reset it for normal joins
+      if (!isReconnect) setIsReconnecting(false);
+
+      // Save lobby to localStorage for reconnection after page reload
+      saveLobbyToStorage(inviteCode);
+
+      // If reconnecting, send reconnect message
+      if (isReconnect) {
+        wsService.reconnect();
+      }
     } catch (err: any) {
+      setGameState(null);
       const errorMessage = err.message || 'Failed to join lobby';
       setError(errorMessage);
       throw new Error(errorMessage);
