@@ -39,10 +39,15 @@ class APIService {
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
-        // Handle 429 separately - show toast and don't propagate error
         if (error.response?.status === 429) {
           toastManager.show('Слишком много запросов. Подождите минуту.', 5000);
           return Promise.resolve({ data: null, status: 429 } as any);
+        }
+        if (error.response?.status === 403) {
+          const detail = (error.response.data as any)?.detail || '';
+          if (detail.includes('banned')) {
+            window.dispatchEvent(new CustomEvent('user-banned', { detail }));
+          }
         }
         return Promise.reject(this.handleError(error));
       }
@@ -209,46 +214,53 @@ class APIService {
 
   // Admin endpoints
 
-  public async getAdminPanel(page: number = 1, limit: number = 20): Promise<{
-    data_user: any;
-    data_lobby: any;
-    data_location: any;
-    total_users: number;
-    total_lobbies: number;
-    total_locations: number;
-    page: number;
-    limit: number;
-  }> {
-    const response = await this.client.get('/admin', {
-      params: { page, limit }
-    });
-    return response.data;
+  public async getAdminUsers(page: number = 1, limit: number = 20) {
+    const response = await this.client.get('/admin/users', { params: { page, limit } });
+    return response.data as { data_user: any[]; total_users: number; page: number; limit: number };
+  }
+
+  public async getAdminLobbies(page: number = 1, limit: number = 20) {
+    const response = await this.client.get('/admin/lobbies', { params: { page, limit } });
+    return response.data as { data_lobby: any[]; total_lobbies: number; page: number; limit: number };
+  }
+
+  public async getAdminLocations(page: number = 1, limit: number = 20) {
+    const response = await this.client.get('/admin/locations', { params: { page, limit } });
+    return response.data as { data_location: any[]; total_locations: number; page: number; limit: number };
+  }
+
+  public async getAdminReports(page: number = 1, limit: number = 10) {
+    const response = await this.client.get('/admin/reports', { params: { page, limit } });
+    return response.data as { data_report: any[]; total_reports: number; page: number; limit: number };
+  }
+
+  public async getAdminReport(id: number) {
+    const response = await this.client.get(`/admin/reports/${id}`);
+    return response.data as { id: number; suspect_id: number; reporter_id: number; reason: string; demo: any[] };
+  }
+
+  public async deleteAdminReport(id: number): Promise<void> {
+    await this.client.delete(`/admin/reports/${id}`);
   }
 
   public async addLocation(lat: number, lon: number, region: string): Promise<void> {
-    await this.client.post('/admin/locations', {
-      lat,
-      lon,
-      region
-    });
+    await this.client.post('/admin/locations', { lat, lon, region });
   }
 
   public async changeLocation(id: number, lat_new: number, lon_new: number, region_new: string): Promise<void> {
-    await this.client.patch(`/admin/locations/${id}`, {
-      lat_new,
-      lon_new,
-      region_new
-    });
+    await this.client.patch(`/admin/locations/${id}`, { lat_new, lon_new, region_new });
   }
 
   public async deleteLocation(id: number): Promise<void> {
     await this.client.delete(`/admin/locations/${id}`);
   }
 
-  public async banUser(user_id: number, reason: string): Promise<void> {
-    await this.client.delete(`/admin/users/${user_id}/ban`, {
-      data: { reason }
-    });
+  public async banUser(userId: number, reason: string, bannedUntil: string): Promise<void> {
+    await this.client.patch(`/admin/users/${userId}/ban`, { user_id: userId, reason, banned_until: bannedUntil });
+  }
+
+  public async unbanUser(userId: number): Promise<void> {
+    await this.client.patch(`/admin/users/${userId}/unban`);
   }
 
   public async makeAdmin(user_id: number): Promise<void> {

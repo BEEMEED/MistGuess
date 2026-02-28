@@ -1,13 +1,10 @@
 from fastapi import HTTPException
 from services.authorization import AuthService
-
+import asyncio
 from config import config
 import logging
-from repositories.location_repository import LocationRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from repositories.user_repository import UserRepository
-from repositories.lobby_repository import LobbyRepository
-from repositories.location_repository import LocationRepository
+from repositories import UserRepository, LobbyRepository, LocationRepository, ReportRepository
 
 auth = AuthService
 logger = logging.getLogger(__name__)
@@ -22,39 +19,89 @@ class Admin_Panel:
         location = await LocationRepository.add_location(db, lat, lon, region, country)
         if not location:
             raise HTTPException(status_code=400, detail="Failed to add location")
+
+        logger.info(f"Admin {admin_login} added location {location.id} with coordinates ({lat}, {lon}) in region {region}")
         return {"location_id": location.id}
 
+
+
     @staticmethod
-    async def Get_Panel_Admin(db: AsyncSession, limit: int, page: int):
+    async def Get_locations(db: AsyncSession, limit: int, page: int):
         offset = (page - 1) * limit
-
-        users = await UserRepository.get_paginated(db, offset, limit)
-        lobbies = await LobbyRepository.get_paginated(db, offset, limit)
-        locations = await LocationRepository.get_paginated(db,offset,limit)
-        
-        total_users = await UserRepository.count_all(db)
-        total_lobbies = await LobbyRepository.count_all(db)
-        total_locations = await LocationRepository.count_all(db)
-
+        locations, total_locations = await asyncio.gather(
+            LocationRepository.get_paginated(db, offset, limit),
+            LocationRepository.count_all(db),
+        )
         return {
-        "data_user": [
-            {"id": u.id, "username": u.username, "name": u.name, "xp": u.xp, "rank": u.rank, "role": u.role, "telegram": u.telegram}
-            for u in users
-        ],
-        "data_lobby": [
-            {"id": l.id, "invite_code": l.invite_code, "host_id": l.host_id}
-            for l in lobbies
-        ],
-        "data_location": [
-            {"id": loc.id, "lat": loc.lat, "lon": loc.lon, "region": loc.region}
-            for loc in locations
-        ],
-        "total_users": total_users,
-        "total_lobbies": total_lobbies,
-        "total_locations": total_locations,
-        "page": page,
-        "limit": limit,
-    }
+            "data_location": [
+                {"id": loc.id, "lat": loc.lat, "lon": loc.lon, "region": loc.region}
+                for loc in locations
+            ],
+            "total_locations": total_locations,
+            "page": page,
+            "limit": limit,
+        }
+
+    @staticmethod
+    async def Get_users(db: AsyncSession, limit: int, page: int):
+        offset = (page - 1) * limit
+        users, total_users = await asyncio.gather(
+            UserRepository.get_paginated(db, offset, limit),
+            UserRepository.count_all(db),
+        )
+        return {
+            "data_user": [
+                {"id": u.id, "username": u.username, "name": u.name, "xp": u.xp, "rank": u.rank, "role": u.role, "telegram": u.telegram, "banned_until": u.ban.banned_until.isoformat() if (u.ban and u.ban.banned_until) else None}
+                for u in users
+            ],
+            "total_users": total_users,
+            "page": page,
+            "limit": limit,
+        }
+
+    @staticmethod
+    async def Get_lobbies(db: AsyncSession, limit: int, page: int):
+        offset = (page - 1) * limit
+        lobbies, total_lobbies = await asyncio.gather(
+            LobbyRepository.get_paginated(db, offset, limit),
+            LobbyRepository.count_all(db),
+        )
+        return {
+            "data_lobby": [
+                {"id": l.id, "invite_code": l.invite_code, "host_id": l.host_id}
+                for l in lobbies
+            ],
+            "total_lobbies": total_lobbies,
+            "page": page,
+            "limit": limit,
+        }
+
+    @staticmethod
+    async def Get_reports(db: AsyncSession, limit: int, page: int):
+        offset = (page - 1) * limit
+        reports, total_reports = await asyncio.gather(
+            ReportRepository.get_paginated(db, offset, limit),
+            ReportRepository.count_all(db),
+        )
+        return {
+            "data_report": [
+                {"id": r.id, "suspect_id": r.suspect_id, "reporter_id": r.reporter_id, "reason": r.reason}
+                for r in reports
+            ],
+            "total_reports": total_reports,
+            "page": page,
+            "limit": limit,
+        }
+    
+    @staticmethod
+    async def Delete_Report(db: AsyncSession, admin_login: str, id: int):
+        report = await ReportRepository.delete(db, id)
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
+
+        logging.warning(f"Admin {admin_login} deleted report {id} for user {report.suspect_id} reported by {report.reporter_id} for reason: {report.reason}")
+        return 
+
     @staticmethod
     async def Change_Location(db: AsyncSession,admin_login: str, lat_new: float, lon_new: float, region_new: str, id: int):
         location = await LocationRepository.get_by_id(db, id)
@@ -81,13 +128,6 @@ class Admin_Panel:
 
         logging.warning(f"Admin deleted location {id}")
 
-    @staticmethod
-    async def Ban_User(db: AsyncSession, admin_login: str, id: int, reason: str):
-        user = await UserRepository.get_by_id(db,id)
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        await UserRepository.delete(db, id)
-        logging.warning(f"Admin {admin_login} banned user {user.name} for {reason}")
 
     # @staticmethod
     # async def send_message_telegram(db: AsyncSession, admin_login: str, message: str, id: int):

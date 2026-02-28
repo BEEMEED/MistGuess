@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { MistbornButton } from '../components/ui/MistbornButton';
+import { Sidebar } from '../components/ui/Sidebar';
 import { RoundResultOverlay } from '../components/game/RoundResultOverlay';
 import { SettingsOverlay } from '../components/game/SettingsOverlay';
 import { GuessMap } from '../components/game/GuessMap';
@@ -300,30 +301,11 @@ export const HomePage: React.FC = () => {
         </div>
       )}
 
-      {/* Quick Match Button - top left */}
-      <button className="home-page__quick-match-btn" onClick={() => navigate('/matchmaking')} title="Quick Match 1v1">
-        ⚔️
-      </button>
-
-      {/* Guide Button - top left, next to Quick Match */}
-      <button className="home-page__guide-btn" onClick={() => navigate('/guide')} title="How to Play">
-        📖
-      </button>
-
-      {/* Clans Button - top left */}
-      <button className="home-page__clans-btn" onClick={() => navigate('/clans')} title="Clans">
-        ⚔️
-      </button>
-
-      {/* Spectate Button */}
-      <button className="home-page__spectate-btn" onClick={() => setShowSpectate(true)} title="Spectate a game">
-        👁
-      </button>
-
-      {/* Settings Button - always visible */}
-      <button className="home-page__settings-btn" onClick={() => setShowSettings(true)}>
-        ⚙️
-      </button>
+      {/* Sidebar Navigation */}
+      <Sidebar
+        onSpectateClick={() => setShowSpectate(true)}
+        onSettingsClick={() => setShowSettings(true)}
+      />
 
       {/* Street View Container */}
       <div ref={streetViewDivRef} className="home-page__street-view" />

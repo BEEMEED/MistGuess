@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from datetime import datetime
 
 class AddLocationAdmin(BaseModel):
     lat: float = Field(ge=-90.0, le=90.0)
@@ -19,7 +20,10 @@ class ChangeLocationAdmin(BaseModel):
 
 
 class BanUserAdmin(BaseModel):
-    reason: str = Field(min_length=3, max_length=50)
+    user_id: int
+    reason: str = Field(min_length=3, max_length=100)
+    banned_until: datetime
+    
 
 
 

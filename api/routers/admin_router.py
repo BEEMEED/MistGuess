@@ -7,11 +7,11 @@ from schemas.admin_schema import (
     BanUserAdmin,
     SendTelegramMessage,
 )
-from repositories.location_repository import LocationRepository
+from repositories import LocationRepository, ReportRepository, UserRepository
 from utils.dependencies import Dependies
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from models.user import User
+from models import User
 import json
 router = APIRouter()
 admin_panel = Admin_Panel()
@@ -24,15 +24,66 @@ def require_admin(token: User = Depends(Dependies.get_current_user)):
     return token
 
 
-@router.get("/")
-async def get_admin(
+@router.get("/locations")
+async def get_locations(
     db: AsyncSession = Depends(get_db),
     limit: int = Query(ge=10),
     page: int = Query(ge=1),
     _: dict = Depends(require_admin),
 ) -> dict:
-    return await admin_panel.Get_Panel_Admin(db, limit, page)
+    return await admin_panel.Get_locations(db, limit, page)
 
+@router.get("/users")
+async def get_users(
+    db: AsyncSession = Depends(get_db),
+    limit: int = Query(ge=10),
+    page: int = Query(ge=1),
+    _: dict = Depends(require_admin),
+) -> dict:
+    return await admin_panel.Get_users(db, limit, page)
+
+@router.get("/lobbies")
+async def get_lobbies(
+    db: AsyncSession = Depends(get_db),
+    limit: int = Query(ge=10),
+    page: int = Query(ge=1),
+    _: dict = Depends(require_admin),
+) -> dict:
+    return await admin_panel.Get_lobbies(db, limit, page)
+
+@router.get("/reports")
+async def get_reports(
+    db: AsyncSession = Depends(get_db),
+    limit: int = Query(ge=10),
+    page: int = Query(ge=1),
+    _: dict = Depends(require_admin),
+) -> dict:
+    return await admin_panel.Get_reports(db, limit, page)
+
+@router.get("/reports/{report_id}")
+async def get_report(
+    report_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_admin),
+) -> dict:
+    report = await ReportRepository.get_by_id(db, report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return {
+        "id": report.id,
+        "suspect_id": report.suspect_id,
+        "reporter_id": report.reporter_id,
+        "reason": report.reason,
+        "demo": report.demo,
+    }
+
+@router.delete("/reports/{report_id}")
+async def delete_report(
+    report_id: int,
+    db: AsyncSession = Depends(get_db),
+    token: User = Depends(require_admin),
+):
+    return await admin_panel.Delete_Report(db, admin_login=token.username, id=report_id)
 
 @router.post("/locations")
 async def create_location(
@@ -69,19 +120,6 @@ async def delete_location(
     return await admin_panel.Delete_Location(db, admin_login=token.username, id=location_id)
 
 
-@router.delete("/users/{user_id}/ban")
-@rate_limit(max_requests=5, seconds=60)
-async def ban_user(
-    user_id: int,
-    request: BanUserAdmin,
-    req: Request,
-    token: User = Depends(require_admin),
-    db: AsyncSession = Depends(get_db),
-):
-    return await admin_panel.Ban_User(
-        db, admin_login=token.username, id=user_id, reason=request.reason
-    )
-
 
 @router.patch("/users/{user_id}/role")
 async def update_user_role(
@@ -90,6 +128,23 @@ async def update_user_role(
     db: AsyncSession = Depends(get_db),
 ):
     return await admin_panel.Change_Role(db, admin_login=token.username, id=user_id)
+
+@router.patch("/users/{user_id}/ban")
+@rate_limit(max_requests=5, seconds=60)
+async def ban_user(
+    request: BanUserAdmin,
+    token: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    return await UserRepository.ban_user(db, request.user_id, reason=request.reason, banned_until=request.banned_until)
+@router.patch("/users/{user_id}/unban")
+@rate_limit(max_requests=5, seconds=60)
+async def unban_user(
+    user_id: int,
+    token: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    return await UserRepository.unban_user(db, user_id)
 
 
 # @router.post("/users/{user_id}/notifications")

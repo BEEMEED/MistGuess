@@ -17,7 +17,9 @@ the platform features skill based matchmaking, XP progression with ranks, clan s
 - **hp combat** - guess accuracy deals damage to opponent
 - **reconnection support** - rejoin games after disconnect
 - **spectator mode** - watch ongoing games live with real-time camera and position sync
-- **admin panel** - manage locations and users
+- **report system** - report players with demo recording, reviewable in admin panel
+- **ban system** - temporary bans with auto expiry, enforced on every request
+- **admin panel** - manage users, locations, reports, ban/unban, demo replay
 - **orders (clans)** - closed clans with invite system
 - **oredrs wars** - asynchronous 5v5 battles between clans
 - **order ranks** - progression via clan xp
@@ -97,9 +99,10 @@ mistguess/
 │   ├── core/                     # core functionality
 │   │   └── monitoring.py         # sentry configuration
 │   ├── models/                   # sqlalchemy models
-│   │   ├── user.py               # user model with XP/ranks
+│   │   ├── user.py               # user model with XP/ranks, ban 
 │   │   ├── lobby.py              # lobby/game model
-│   │   └── locations.py          # game locations
+│   │   ├── locations.py          # game locations
+│   │   └── reports.py            # player reports with demo frames
 │   ├── routers/                  # api endpoints
 │   │   ├── authorization_router.py  # google OAuth, jwt
 │   │   ├── lobby_router.py          # lobby crud

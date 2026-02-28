@@ -16,132 +16,6 @@
   z-index: 1;
 }
 
-/* Quick Match Button */
-.home-page__quick-match-btn {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 100;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: rgba(10, 10, 10, 0.8);
-  border: 2px solid rgba(74, 158, 255, 0.6);
-  color: rgba(74, 158, 255, 0.9);
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
-  backdrop-filter: blur(5px);
-}
-
-.home-page__quick-match-btn:hover {
-  background: rgba(74, 158, 255, 0.2);
-  border-color: rgba(74, 158, 255, 0.9);
-  box-shadow: 0 0 30px rgba(74, 158, 255, 0.5);
-  transform: scale(1.1);
-  animation: quickMatchPulse 1s infinite;
-}
-
-@keyframes quickMatchPulse {
-  0%, 100% {
-    box-shadow: 0 0 30px rgba(74, 158, 255, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(74, 158, 255, 0.8);
-  }
-}
-
-/* Guide Button */
-.home-page__guide-btn {
-  position: fixed;
-  top: 20px;
-  left: 80px;
-  z-index: 100;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: rgba(10, 10, 10, 0.8);
-  border: 2px solid rgba(139, 92, 246, 0.6);
-  color: rgba(139, 92, 246, 0.9);
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-  backdrop-filter: blur(5px);
-}
-
-.home-page__guide-btn:hover {
-  background: rgba(139, 92, 246, 0.2);
-  border-color: rgba(139, 92, 246, 0.9);
-  box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-  transform: scale(1.1);
-  animation: guidePulse 1s infinite;
-}
-
-/* Clans Button */
-.home-page__clans-btn {
-  position: fixed;
-  top: 20px;
-  left: 140px;
-  z-index: 100;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: rgba(10, 10, 10, 0.8);
-  border: 2px solid rgba(150, 150, 150, 0.4);
-  color: rgba(180, 180, 180, 0.9);
-  font-size: 1.3rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 20px rgba(120, 120, 120, 0.2);
-  backdrop-filter: blur(5px);
-}
-
-.home-page__clans-btn:hover {
-  background: rgba(60, 60, 60, 0.3);
-  border-color: rgba(180, 180, 180, 0.6);
-  box-shadow: 0 0 30px rgba(140, 140, 140, 0.4);
-  transform: scale(1.1);
-}
-
-/* Spectate Button */
-.home-page__spectate-btn {
-  position: fixed;
-  top: 20px;
-  left: 200px;
-  z-index: 100;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: rgba(10, 10, 15, 0.8);
-  border: 1px solid rgba(147, 112, 219, 0.5);
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 20px rgba(147, 112, 219, 0.3);
-  backdrop-filter: blur(5px);
-}
-
-.home-page__spectate-btn:hover {
-  background: rgba(147, 112, 219, 0.2);
-  border-color: rgba(147, 112, 219, 0.9);
-  box-shadow: 0 0 30px rgba(147, 112, 219, 0.5);
-  transform: scale(1.1);
-}
 
 /* Spectate Overlay */
 .spectate-overlay {
@@ -246,42 +120,6 @@
 }
 
 
-@keyframes guidePulse {
-  0%, 100% {
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(139, 92, 246, 0.8);
-  }
-}
-
-/* Settings Button */
-.home-page__settings-btn {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 100;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: rgba(10, 10, 10, 0.8);
-  border: 2px solid rgba(205, 127, 50, 0.6);
-  color: var(--text-gold);
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 20px rgba(205, 127, 50, 0.3);
-}
-
-.home-page__settings-btn:hover {
-  background: rgba(205, 127, 50, 0.2);
-  border-color: rgba(205, 127, 50, 0.9);
-  box-shadow: 0 0 30px rgba(205, 127, 50, 0.5);
-  transform: rotate(45deg);
-}
 
 /* Mini Map - simple without decorative frame */
 .home-page__mini-map {
@@ -347,14 +185,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .home-page__settings-btn {
-    width: 45px;
-    height: 45px;
-    font-size: 1.25rem;
-    top: 15px;
-    right: 15px;
-  }
-
   .home-page__mini-map {
     bottom: 70px;
     right: 10px;
