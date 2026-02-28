@@ -27,6 +27,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     totalRounds?: number;
   }>>([]);
   const [showReconnectPrompt, setShowReconnectPrompt] = useState(false);
+  const [banMessage, setBanMessage] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -58,10 +59,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           } else {
             console.log('No active lobbies found');
           }
-        } catch (error) {
-          // If profile fetch fails, just set basic user info
-          console.error('Failed to load profile:', error);
-          setUser({ user_id, token });
+        } catch (error: any) {
+          if (error?.status === 403 && error?.message?.includes('banned')) {
+            setBanMessage(error.message);
+          } else {
+            console.error('Failed to load profile:', error);
+            setUser({ user_id, token });
+          }
         }
       }
 
@@ -69,6 +73,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     loadUserWithProfile();
+
+    const onBanned = (e: Event) => setBanMessage((e as CustomEvent).detail);
+    window.addEventListener('user-banned', onBanned);
+    return () => window.removeEventListener('user-banned', onBanned);
   }, []);
 
   const login = async (username: string, password: string): Promise<void> => {
@@ -174,6 +182,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   console.log('AuthProvider render:', { showReconnectPrompt, activeLobbiesLength: activeLobbies.length });
+
+  if (banMessage) {
+    const match = banMessage.match(/until (.+?) for reason: (.+)/);
+    const until = match ? new Date(match[1]).toLocaleString() : '—';
+    const reason = match ? match[2] : banMessage;
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, background: '#040308',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: 16, fontFamily: 'inherit', zIndex: 9999,
+      }}>
+        <div style={{
+          background: 'rgba(13,11,23,0.9)', border: '1px solid rgba(200,74,74,0.3)',
+          borderRadius: 16, padding: '40px 48px', maxWidth: 480, textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔨</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#c84a4a', marginBottom: 8 }}>
+            Аккаунт заблокирован
+          </div>
+          <div style={{ color: 'rgba(220,200,180,0.6)', fontSize: 14, marginBottom: 20 }}>
+            Причина: <span style={{ color: '#e8e4d8' }}>{reason}</span>
+          </div>
+          <div style={{ color: 'rgba(220,200,180,0.4)', fontSize: 13 }}>
+            Бан действует до: <span style={{ color: 'rgba(200,74,74,0.8)' }}>{until}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>

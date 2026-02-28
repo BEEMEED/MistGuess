@@ -64,18 +64,23 @@ async def GameStart(
         # spectator
         "spectate": lambda db, data: ws_service.camera_update(lobby_code, data, data["num_player"]),
         "guess_preview": lambda db, data: ws_service.guess_preview(data, lobby_code),
-        
-        
+        # anticheat
+        "tab_visibility": lambda db, data: ws_service.tab_visibility(db, lobby_code, user_id, data.get("visible", True), websocket),
+        # report
+        "report": lambda db, data: ws_service.report(db, {**data, "reporter_id": user_id}),
     }
     try:
         while True:
             data = await websocket.receive_json()
-            
+
             async with asyncsession() as db:
                 message_type = data.get("type")
                 handler = handlers.get(message_type)
                 if handler:
-                    await handler(db,data)
+                    try:
+                        await handler(db, data)
+                    except Exception as handler_err:
+                        logger.error(f"Handler error for '{message_type}': {handler_err}")
                 else:
                     logger.warning(f"Unknown message type: {message_type}")
                 

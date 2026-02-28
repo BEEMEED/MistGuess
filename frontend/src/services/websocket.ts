@@ -212,11 +212,19 @@ class WebSocketService {
     this.send(msg as WSClientMessage);
   }
 
+  public sendTabVisibility(visible: boolean): void {
+    this.send({ type: 'tab_visibility', visible } as any);
+  }
+
   public sendGuessPreview(lat: number | null, lng: number | null, num_player: number): void {
     const msg: any = { type: 'guess_preview', lat, lng, num_player };
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(msg));
     }
+  }
+
+  public sendReport(suspectId: number, lobbyCode: string, reason: string): void {
+    this.send({ type: 'report', suspect_id: suspectId, lobby_code: lobbyCode, reason } as any);
   }
 }
 

@@ -16,6 +16,8 @@ from repositories.lobby_repository import LobbyRepository
 from repositories.location_repository import LocationRepository
 from core.metrics import active_websockets
 from services.clan_service import ClanWarService
+from schemas.report_schema import Report_request
+from repositories.report_repository import ReportRepository
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +27,14 @@ locat = LocationService()
 
 class Websocket_service:
     def __init__(self):
-        self.connections: dict[str, list[tuple[int, WebSocket]]] = {}  # invitecode: [(login, ws)]
+        self.connections: dict[str, list[tuple[int, WebSocket]]] = (
+            {}
+        )  # invitecode: [(login, ws)]
         # self.games: dict[str, dict] = {}
         self.timers = {}  # invitecode: timer
         # self.disconnects: dict[str,dict[int, float]] = {}  # invitecode: [(login, timer)]
         self.spectators: dict[str, list[WebSocket]] = {}
-
+        self.tab_timers: dict[str, asyncio.Task] = {}
 
     @staticmethod
     async def _get_game(InviteCode: str):
@@ -38,7 +42,7 @@ class Websocket_service:
         if not data:
             return None
         return json.loads(data)
-    
+
     async def kick_timer(
         self, db: AsyncSession, user_id: int, invitecode: str, ws: WebSocket
     ):
@@ -60,19 +64,20 @@ class Websocket_service:
 
     async def get_active_lobbies(self, user_id: int):
         active_lobby = []
-    
+
         for invitecode, players in self.connections.items():
             if any(user_id == player_login for player_login, _ in players):
-                game = await self._get_game(invitecode)           
-                
+                game = await self._get_game(invitecode)
+
                 lobby_info = {
                     "InviteCode": invitecode,
                     "ingame": True if game else False,
                 }
 
-
                 if game:
-                    lobby_info["current_location_index"] = game["current_location_index"]
+                    lobby_info["current_location_index"] = game[
+                        "current_location_index"
+                    ]
                     lobby_info["hp"] = game["hp"]
                 active_lobby.append(lobby_info)
         return active_lobby
@@ -114,7 +119,6 @@ class Websocket_service:
         if InviteCode not in self.connections:
             self.connections[InviteCode] = []
 
-
         self.connections[InviteCode] = [
             (uid, ws) for uid, ws in self.connections[InviteCode] if uid != user_id
         ]
@@ -154,7 +158,9 @@ class Websocket_service:
                         "lon": current_location["lon"],
                         "url": current_location["url"],
                     },
-                    "roundstart_time": game.get("RoundsStartTime", int(time.time() * 1000)),
+                    "roundstart_time": game.get(
+                        "RoundsStartTime", int(time.time() * 1000)
+                    ),
                     "timer": lobby.timer,
                     "hp": game["hp"],
                     "player_guess": [
@@ -190,14 +196,22 @@ class Websocket_service:
         if user_id in lobby.users:
             await LobbyRepository.remove_user(db, user_id, InviteCode)
 
-        if len(self.connections[InviteCode]) == 0:  
-            
+        if len(self.connections[InviteCode]) == 0:
+
             await r.delete(f"game:{InviteCode}")
             lobby = await LobbyRepository.get_by_code(db, InviteCode)
             if lobby:
                 await LobbyRepository.delete(db, InviteCode)
             return
         active_websockets.dec()
+
+        game = await self._get_game(InviteCode)
+        if game and len(self.connections[InviteCode]) == 1:
+            logger.info(
+                f"Player {user_id} left {InviteCode} during active game ending game"
+            )
+            await self.GameEnded(db, InviteCode)
+            return
 
         players = []
         for user_id, _ in self.connections[InviteCode]:
@@ -235,9 +249,17 @@ class Websocket_service:
                 logger.warning(f"Failed to send broadcast to user: {e}")
         logger.info(f"{user.name} sent message {message} to {InviteCode}")
 
-    async def GameStart(self, db: AsyncSession, InviteCode: str, mode: str | None = None, war_id: int | None = None, user_id: int | None = None, player_id: int | None = None):
+    async def GameStart(
+        self,
+        db: AsyncSession,
+        InviteCode: str,
+        mode: str | None = None,
+        war_id: int | None = None,
+        user_id: int | None = None,
+        player_id: int | None = None,
+    ):
         # -- FOR WARS --
-        
+
         lobby = await LobbyRepository.get_by_code(db, InviteCode)
         if not lobby:
             raise HTTPException(status_code=404, detail="InviteCode not found")
@@ -250,25 +272,22 @@ class Websocket_service:
                 "locations": lobby.locations,
                 "current_location_index": 0,
                 "guesses": {},
-                "total_score": 0
+                "total_score": 0,
             }
             await r.setex(f"game:{InviteCode}", 3600, json.dumps(game))
 
-            message = {
-                "type": "game_started", "mode": "clan_war", "timer": 120
-            }
-            
+            message = {"type": "game_started", "mode": "clan_war", "timer": 120}
+
             for _, ws in self.connections[InviteCode]:
-                
+
                 try:
                     await ws.send_json(message)
-                
+
                 except Exception as e:
                     logger.error(f"Failed to send game_started to connection: {e}")
-            
+
             logger.info(f"war game started for {InviteCode}")
             return
-
 
         game = {
             "current_location_index": 0,
@@ -277,7 +296,7 @@ class Websocket_service:
             "hp": {player_id: 6000 for player_id in lobby.users},
         }
         await r.setex(f"game:{InviteCode}", 3600, json.dumps(game))
-        
+
         message = {
             "type": "game_started",
             "hp": {player_id: 6000 for player_id in lobby.users},
@@ -293,7 +312,9 @@ class Websocket_service:
             try:
                 await ws.send_json(message)
             except Exception as e:
-                logger.error(f"Failed to send game_started to spectators connection: {e}")
+                logger.error(
+                    f"Failed to send game_started to spectators connection: {e}"
+                )
 
         logger.info(f"Game started for {InviteCode}")
 
@@ -301,7 +322,6 @@ class Websocket_service:
         game = await self._get_game(InviteCode)
         if not game:
             return
-        
 
         currentRound = game["current_location_index"]
 
@@ -310,8 +330,6 @@ class Websocket_service:
         if currentRound in game["started_rounds"]:
             return
         game["started_rounds"].append(currentRound)
-
-        
 
         locations_list = game["locations"]
         current_location = locations_list[currentRound]
@@ -338,12 +356,14 @@ class Websocket_service:
                     await ws.send_json(message)
                 except Exception as e:
                     logger.error(f"Failed to send round_started to connection: {e}")
-            
+
             for ws in self.spectators.get(InviteCode, []):
                 try:
                     await ws.send_json(message)
                 except Exception as e:
-                    logger.error(f"Failed to send round_started to spectators connection: {e}")
+                    logger.error(
+                        f"Failed to send round_started to spectators connection: {e}"
+                    )
 
         if InviteCode in self.timers:
             self.timers[InviteCode].cancel()
@@ -363,28 +383,30 @@ class Websocket_service:
 
         guesses = game.get("guesses", {}).get(str(current_index), [])
         num_guesses = len(guesses)
-        
+
         # --- FOR WARS ---
         if game.get("mode") == "clan_war":
             if num_guesses == 1:
                 guess = guesses[0]
                 points = await locat.calculate_points(guess["distance"])
                 guess["points"] = points
-                game["total_score"] = game.get("total_score",0) + points
+                game["total_score"] = game.get("total_score", 0) + points
+
             if "ended_rounds" not in game:
                 game["ended_rounds"] = []
+
             game["ended_rounds"].append(current_index)
             game["current_location_index"] += 1
-        
+
             if game["current_location_index"] >= len(locations_list):
                 await r.setex(f"game:{InviteCode}", 3600, json.dumps(game))
-                await self.clan_war_ended(db,InviteCode)
+                await self.clan_war_ended(db, InviteCode)
                 return
             await r.setex(f"game:{InviteCode}", 3600, json.dumps(game))
 
             message = {
                 "type": "round_ended",
-                "total_score": game.get("total_score",0),
+                "total_score": game.get("total_score", 0),
                 "round": current_index,
             }
             if InviteCode in self.connections:
@@ -429,11 +451,11 @@ class Websocket_service:
 
             if "ended_rounds" not in game:
                 game["ended_rounds"] = []
-            
+
             game["ended_rounds"].append(current_index)
             game["current_location_index"] += 1
             await r.setex(f"game:{InviteCode}", 3600, json.dumps(game))
-            
+
             await asyncio.sleep(5)
             await self.RoundStarted(db, InviteCode)
             return
@@ -486,12 +508,14 @@ class Websocket_service:
                     await ws.send_json(message)
                 except Exception as e:
                     logger.error(f"Failed to send round_ended to connection: {e}")
-            
+
             for ws in self.spectators.get(InviteCode, []):
                 try:
                     await ws.send_json(message)
                 except Exception as e:
-                    logger.error(f"Failed to send round_ended to spectators connection: {e}")
+                    logger.error(
+                        f"Failed to send round_ended to spectators connection: {e}"
+                    )
 
         game["current_location_index"] += 1
         await r.setex(f"game:{InviteCode}", 3600, json.dumps(game))
@@ -559,16 +583,19 @@ class Websocket_service:
                 try:
                     await ws.send_json(message)
                 except Exception as e:
-                    logger.error(f"Failed to send game_ended to spectators connection: {e}")
+                    logger.error(
+                        f"Failed to send game_ended to spectators connection: {e}"
+                    )
 
         # --- xp rewards ---
         player_ids = [login for login, _ in self.connections[InviteCode]]
 
-
         result = await db.execute(select(User).where(User.id.in_(player_ids)))
         users = {user.id: user for user in result.scalars().all()}
 
-        old_ranks = {user_id: users[user_id].rank for user_id in player_ids if user_id in users}
+        old_ranks = {
+            user_id: users[user_id].rank for user_id in player_ids if user_id in users
+        }
 
         for user_id in player_ids:
             if user_id in users:
@@ -584,17 +611,21 @@ class Websocket_service:
 
         for user in users.values():
             await db.refresh(user)
-        new_ranks = {user_id: users[user_id].rank for user_id in player_ids if user_id in users}
+        new_ranks = {
+            user_id: users[user_id].rank for user_id in player_ids if user_id in users
+        }
 
         # --- send rank_up notifications ---
         rank_ups = []
         for user_id in player_ids:
             if old_ranks.get(user_id) != new_ranks.get(user_id):
-                rank_ups.append({
-                    "user_id": user_id,
-                    "old_rank": old_ranks[user_id],
-                    "new_rank": new_ranks[user_id],
-                })
+                rank_ups.append(
+                    {
+                        "user_id": user_id,
+                        "old_rank": old_ranks[user_id],
+                        "new_rank": new_ranks[user_id],
+                    }
+                )
 
         if rank_ups and InviteCode in self.connections:
             message_rank = {"type": "rank_up", "rank_ups": rank_ups}
@@ -633,12 +664,12 @@ class Websocket_service:
 
                 user.country_stats = stats
                 await db.commit()
-        
 
         # --- cleanup ---
         await asyncio.sleep(0.5)
         await r.delete(f"game:{InviteCode}")
         await LobbyRepository.delete(db, InviteCode)
+        await r.expire(f"spectate:{InviteCode}", 3600)
 
         logger.info(f"Game ended for {InviteCode}")
 
@@ -659,8 +690,7 @@ class Websocket_service:
             game["guesses"][current_index_str] = []
 
         existing_guess = any(
-            g["player"] == user_id
-            for g in game["guesses"][current_index_str]
+            g["player"] == user_id for g in game["guesses"][current_index_str]
         )
         if existing_guess:
             logger.warning(
@@ -676,7 +706,13 @@ class Websocket_service:
         distance = locat.haversine_m(lat, lon, lat_cur, lon_cur)
 
         game["guesses"][current_index_str].append(
-            {"player": user_id, "distance": distance, "lat": lat, "lon": lon, "country": current_location["country"]}
+            {
+                "player": user_id,
+                "distance": distance,
+                "lat": lat,
+                "lon": lon,
+                "country": current_location["country"],
+            }
         )
         await r.setex(f"game:{lobbycode}", 3600, json.dumps(game))
 
@@ -694,7 +730,7 @@ class Websocket_service:
         if guesses_count >= (1 if game.get("mode") == "clan_war" else 2):
             logger.info(f"All players guessed! Ending round for {lobbycode}")
             await self.RoundEnded(db, lobbycode)
-        
+
         game = await self._get_game(lobbycode)
         if not game:
             logger.info(f"Game {lobbycode} was deleted during RoundEnded")
@@ -748,13 +784,11 @@ class Websocket_service:
 
             if current_index_str in game["guesses"]:
                 player_has_guessed = any(
-                    g["player"] == user_id
-                    for g in game["guesses"][current_index_str]
+                    g["player"] == user_id for g in game["guesses"][current_index_str]
                 )
                 message["game_state"]["PlayerHasGuessed"] = player_has_guessed
                 message["game_state"]["player_guess"] = [
-                    g["player"]
-                    for g in game["guesses"][current_index_str]
+                    g["player"] for g in game["guesses"][current_index_str]
                 ]
 
         message["players"] = []
@@ -774,21 +808,22 @@ class Websocket_service:
                     logger.error(f"Failed to send player_reconnected to {login_p}: {e}")
 
         logger.info(f"Player {user_id} reconnected to {inviteCode}")
-    
+
     async def clan_war_ended(self, db: AsyncSession, lobbycode: str):
         game = await self._get_game(lobbycode)
         if not game:
             return
         war_id = game["war_id"]
         user_id = game["user_id"]
-        total_score = game.get("total_score",0)
+        total_score = game.get("total_score", 0)
 
         await ClanWarService.submit_score(db, war_id, user_id, total_score)
         await r.delete(f"game:{lobbycode}")
 
     # --- spectate ---
 
-    async def camera_update(self, lobby_code: str, data: dict, num_player: int):
+    async def camera_update(self, lobby_code: str, data: dict, num_player: int) -> None:
+        await r.rpush(f"spectate:{lobby_code}", json.dumps(data))  # type: ignore
         if lobby_code not in self.spectators:
             return
         message = {
@@ -822,8 +857,89 @@ class Websocket_service:
                 await ws.send_json(message)
             except Exception:
                 pass
-        
 
-# todo add spectator for opponent in games and maybe add option to watch live games in lobby list
+    async def tab_visibility(
+        self,
+        db: AsyncSession,
+        lobby_code: str,
+        user_id: int,
+        visible: bool,
+        websocket: WebSocket,
+    ) -> None:
+        game = await self._get_game(lobby_code)
+        if not game:
+            return
+
+        key = f"{lobby_code}:{user_id}"
+
+        if not visible:
+            if key in self.tab_timers:
+                return
+
+            async def _kick_after_delay():
+                try:
+                    for remaining in range(10, 0, -1):
+                        msg = {
+                            "type": "tab_away_countdown",
+                            "player": user_id,
+                            "remaining": remaining,
+                        }
+                        for _, ws in self.connections.get(lobby_code, []):
+                            try:
+                                await ws.send_json(msg)
+                            except Exception:
+                                pass
+
+                        await asyncio.sleep(1)
+
+                    self.tab_timers.pop(key, None)
+                    try:
+                        await websocket.send_json({"type": "kicked", "reason": "tab_away"})
+                    except Exception:
+                        pass
+                    await self.player_left(db, user_id, lobby_code, websocket)
+                    logger.info(
+                        f"Player {user_id} kicked from {lobby_code} due to tab inactivity"
+                    )
+
+                except Exception:
+                    pass
+
+            task = asyncio.create_task(_kick_after_delay())
+            self.tab_timers[key] = task
+        else:
+            task = self.tab_timers.pop(key, None)
+            if task and not task.done():
+                task.cancel()
+
+                msg = {
+                    "type": "tab_away_cancelled",
+                    "player": user_id,
+                }
+                for _, ws in self.connections.get(lobby_code, []):
+                    try:
+                        await ws.send_json(msg)
+                    except Exception:
+                        pass
+
+    async def report(self, db: AsyncSession, report: dict):
+        frames = await r.lrange(f"spectate:{report['lobby_code']}", 0, -1)  # type: ignore
+        if not frames:
+            logger.warning(
+                f"No demo found for lobby {report['lobby_code']} saving report without demo"
+            )
+            demo = []
+        else:
+            demo = [json.loads(f) for f in frames]
+
+        logger.info(f"Report received: {report}")
+        return await ReportRepository.create(
+            db,
+            suspect_id=int(report["suspect_id"]),
+            reporter_id=int(report["reporter_id"]),
+            reason=report["reason"],
+            demo=demo,
+        )
+
 
 ws_service = Websocket_service()

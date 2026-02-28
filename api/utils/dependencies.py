@@ -4,10 +4,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 from services.authorization import TokenManager
-from repositories.user_repository import UserRepository
 from database.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from repositories.lobby_repository import LobbyRepository
+from datetime import datetime
+from repositories import LobbyRepository, UserRepository
 
 
 class Dependies:
@@ -60,8 +60,14 @@ class Dependies:
             if not user:
                 logger.error(f"user {user_id} not found in database")
                 raise HTTPException(401, "invalid token")
+            
+            if user.ban:
+                if user.ban.banned_until and user.ban.banned_until < datetime.now():
+                    await UserRepository.unban_user(db, user_id)
+                    return user
 
-            role = user.role
+                raise HTTPException(403, f"user is banned until {user.ban.banned_until} for reason: {user.ban.reason}")
+
             return user
         except HTTPException:
             raise

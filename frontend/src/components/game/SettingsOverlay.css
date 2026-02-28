@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.3s ease-out;
+  animation: soFadeIn 0.2s ease-out;
 }
 
 .settings-overlay__backdrop {
@@ -17,20 +17,20 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
 }
 
 .settings-overlay__content {
   position: relative;
   width: 90%;
-  max-width: 450px;
-  background: rgba(10, 10, 10, 0.95);
-  border: 2px solid rgba(205, 127, 50, 0.6);
-  border-radius: 12px;
+  max-width: 360px;
+  background: rgba(6, 5, 12, 0.98);
+  border: 1px solid rgba(140, 100, 50, 0.15);
+  border-radius: 14px;
   padding: 0;
-  box-shadow: 0 0 40px rgba(205, 127, 50, 0.3);
-  animation: slideDown 0.4s ease-out;
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  animation: soSlideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
@@ -38,282 +38,256 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid rgba(205, 127, 50, 0.3);
-  background: rgba(205, 127, 50, 0.05);
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(140, 100, 50, 0.08);
 }
 
 .settings-overlay__title {
-  font-size: 1.8rem;
+  font-size: 10px;
   font-weight: 700;
-  color: var(--text-gold);
-  font-family: 'Georgia', 'Times New Roman', serif;
-  letter-spacing: 2px;
-  text-shadow: 0 0 20px rgba(205, 127, 50, 0.5);
+  letter-spacing: 3px;
+  color: rgba(160, 130, 80, 0.45);
+  font-family: system-ui, -apple-system, sans-serif;
+  text-transform: uppercase;
   margin: 0;
 }
 
 .settings-overlay__close {
   background: none;
   border: none;
-  color: rgba(205, 127, 50, 0.8);
-  font-size: 1.5rem;
+  color: rgba(160, 140, 110, 0.4);
+  font-size: 13px;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  transition: all 0.3s ease;
-  border-radius: 4px;
+  padding: 4px 6px;
+  transition: color 0.2s;
+  border-radius: 6px;
+  line-height: 1;
 }
 
 .settings-overlay__close:hover {
-  color: var(--text-gold);
-  background: rgba(205, 127, 50, 0.1);
+  color: rgba(180, 160, 130, 0.8);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .settings-overlay__menu {
-  padding: 1rem;
+  padding: 8px;
 }
 
 .settings-overlay__form {
-  padding: 0 0 0.75rem 0;
+  padding: 0 0 6px 0;
 }
 
 .settings-overlay__input {
   width: 100%;
-  padding: 1rem 1.5rem;
-  background: rgba(10, 10, 10, 0.8);
-  border: 2px solid rgba(205, 127, 50, 0.4);
+  box-sizing: border-box;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(140, 100, 50, 0.2);
   border-radius: 8px;
-  color: rgba(230, 190, 140, 1);
-  font-size: 1.3rem;
-  font-family: 'Georgia', 'Times New Roman', serif;
-  font-weight: 600;
+  color: rgba(210, 190, 160, 0.9);
+  font-size: 14px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 500;
   text-align: center;
-  letter-spacing: 3px;
-  transition: all 0.3s ease;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  letter-spacing: 2px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .settings-overlay__input::placeholder {
-  color: rgba(212, 165, 116, 0.75);
-  font-size: 1rem;
-  letter-spacing: normal;
-  font-weight: 500;
+  color: rgba(160, 130, 90, 0.35);
+  font-size: 12px;
+  letter-spacing: 1px;
+  font-weight: 400;
 }
 
 .settings-overlay__input:focus {
   outline: none;
-  border-color: rgba(205, 127, 50, 0.8);
-  box-shadow: 0 0 20px rgba(205, 127, 50, 0.3);
-  background: rgba(10, 10, 10, 0.95);
+  border-color: rgba(140, 100, 50, 0.45);
+  box-shadow: 0 0 0 3px rgba(140, 100, 50, 0.06);
 }
 
+/* ── menu items ── */
 .settings-overlay__menu-item {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  background: rgba(205, 127, 50, 0.05);
-  border: 1px solid rgba(205, 127, 50, 0.3);
-  border-radius: 8px;
-  color: rgba(230, 190, 140, 1);
-  font-size: 1.1rem;
-  font-family: 'Georgia', 'Times New Roman', serif;
-  font-weight: 600;
+  gap: 12px;
+  padding: 0 10px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: rgba(180, 160, 130, 0.65);
+  font-size: 13px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 0.75rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(205, 127, 50, 0.3);
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 2px;
+  text-align: left;
 }
 
 .settings-overlay__menu-item:hover {
-  background: rgba(205, 127, 50, 0.15);
-  border-color: rgba(205, 127, 50, 0.6);
-  transform: translateX(5px);
-  box-shadow: 0 0 15px rgba(205, 127, 50, 0.3);
-  color: rgba(255, 215, 130, 1);
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 15px rgba(205, 127, 50, 0.5);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(210, 190, 160, 0.9);
+  transform: none;
+  box-shadow: none;
 }
 
 .settings-overlay__menu-item:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
-  transform: none;
 }
 
 .settings-overlay__menu-item:disabled:hover {
-  background: rgba(205, 127, 50, 0.05);
-  border-color: rgba(205, 127, 50, 0.3);
-  transform: none;
-  box-shadow: none;
-  color: rgba(230, 190, 140, 1);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(205, 127, 50, 0.3);
+  background: transparent;
+  color: rgba(180, 160, 130, 0.65);
 }
 
+/* ── icon pill ── */
 .settings-overlay__menu-icon {
-  font-size: 1.5rem;
-  display: inline-flex;
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 0.15s;
+  flex-shrink: 0;
 }
 
+.settings-overlay__menu-item:hover .settings-overlay__menu-icon {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* ── variants ── */
+.settings-overlay__menu-item--admin .settings-overlay__menu-icon {
+  background: rgba(200, 160, 60, 0.1);
+  color: #c9a04e;
+}
+.settings-overlay__menu-item--admin:hover .settings-overlay__menu-icon {
+  background: rgba(200, 160, 60, 0.18);
+}
 .settings-overlay__menu-item--admin {
-  border-color: rgba(255, 215, 0, 0.4);
-  background: rgba(255, 215, 0, 0.05);
+  color: rgba(200, 170, 100, 0.75);
 }
-
 .settings-overlay__menu-item--admin:hover {
-  border-color: rgba(255, 215, 0, 0.6);
-  background: rgba(255, 215, 0, 0.15);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  color: rgba(220, 190, 120, 0.95);
 }
 
+.settings-overlay__menu-item--logout .settings-overlay__menu-icon {
+  background: rgba(180, 60, 50, 0.1);
+  color: #c06050;
+}
+.settings-overlay__menu-item--logout:hover .settings-overlay__menu-icon {
+  background: rgba(180, 60, 50, 0.18);
+}
 .settings-overlay__menu-item--logout {
-  border-color: rgba(234, 67, 53, 0.4);
-  background: rgba(234, 67, 53, 0.05);
+  color: rgba(180, 110, 100, 0.65);
 }
-
 .settings-overlay__menu-item--logout:hover {
-  border-color: rgba(234, 67, 53, 0.6);
-  background: rgba(234, 67, 53, 0.15);
-  box-shadow: 0 0 15px rgba(234, 67, 53, 0.3);
+  color: rgba(210, 130, 120, 0.9);
 }
 
-.settings-overlay__login-prompt {
-  text-align: center;
-  padding: 1rem;
-}
-
-.settings-overlay__login-prompt p {
-  color: rgba(212, 165, 116, 0.8);
-  margin-bottom: 1rem;
-  font-size: 1rem;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideDown {
-  from {
-    transform: translateY(-50px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Range Slider Styling */
-.settings-overlay__form input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 6px;
-  background: rgba(10, 10, 10, 0.8);
-  border: 1px solid rgba(205, 127, 50, 0.4);
-  border-radius: 3px;
-  outline: none;
-  transition: all 0.3s ease;
-}
-
-.settings-overlay__form input[type="range"]:hover {
-  border-color: rgba(205, 127, 50, 0.6);
-  box-shadow: 0 0 10px rgba(205, 127, 50, 0.2);
-}
-
-.settings-overlay__form input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.9), rgba(230, 190, 140, 0.9));
-  border: 2px solid rgba(205, 127, 50, 1);
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(205, 127, 50, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8);
-  transition: all 0.3s ease;
-}
-
-.settings-overlay__form input[type="range"]::-webkit-slider-thumb:hover {
-  background: linear-gradient(135deg, rgba(230, 190, 140, 1), rgba(255, 215, 130, 1));
-  box-shadow: 0 0 15px rgba(205, 127, 50, 0.7), 0 2px 6px rgba(0, 0, 0, 0.9);
-  transform: scale(1.1);
-}
-
-.settings-overlay__form input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.9), rgba(230, 190, 140, 0.9));
-  border: 2px solid rgba(205, 127, 50, 1);
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(205, 127, 50, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8);
-  transition: all 0.3s ease;
-}
-
-.settings-overlay__form input[type="range"]::-moz-range-thumb:hover {
-  background: linear-gradient(135deg, rgba(230, 190, 140, 1), rgba(255, 215, 130, 1));
-  box-shadow: 0 0 15px rgba(205, 127, 50, 0.7), 0 2px 6px rgba(0, 0, 0, 0.9);
-  transform: scale(1.1);
-}
-
-/* Timer Section Styling */
+/* ── timer section ── */
 .settings-overlay__timer-section {
-  background: rgba(205, 127, 50, 0.05);
-  border: 1px solid rgba(205, 127, 50, 0.3);
-  border-radius: 8px;
-  margin-bottom: 1rem;
+  background: rgba(140, 100, 40, 0.04);
+  border: 1px solid rgba(140, 100, 40, 0.1);
+  border-radius: 10px;
+  margin-bottom: 6px;
   overflow: hidden;
 }
 
 .settings-overlay__timer-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: rgba(205, 127, 50, 0.1);
-  border-bottom: 1px solid rgba(205, 127, 50, 0.2);
-  color: rgba(230, 190, 140, 1);
-  font-size: 1rem;
-  font-family: 'Georgia', 'Times New Roman', serif;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(140, 100, 40, 0.06);
+  border-bottom: 1px solid rgba(140, 100, 40, 0.08);
+  color: rgba(180, 150, 100, 0.75);
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.5px;
 }
 
 .settings-overlay__timer-section input[type="checkbox"] {
-  accent-color: rgba(205, 127, 50, 0.8);
-  width: 18px;
-  height: 18px;
+  accent-color: #8a6a2e;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
-.settings-overlay__timer-section input[type="checkbox"]:hover {
-  accent-color: rgba(205, 127, 50, 1);
+/* range slider */
+.settings-overlay__form input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(140, 100, 40, 0.2);
+  border: none;
+  border-radius: 2px;
+  outline: none;
+  width: 100%;
+}
+
+.settings-overlay__form input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #8a6a2e;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(138, 106, 46, 0.4);
+}
+
+.settings-overlay__form input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #8a6a2e;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(138, 106, 46, 0.4);
+}
+
+/* ── login variant ── */
+.settings-overlay__menu-item--login .settings-overlay__menu-icon {
+  background: rgba(60, 120, 180, 0.1);
+  color: #5a8aba;
+}
+
+/* ── divider between sections ── */
+.settings-overlay__section-divider {
+  height: 1px;
+  background: rgba(140, 100, 50, 0.08);
+  margin: 4px 10px;
+}
+
+@keyframes soFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes soSlideUp {
+  from {
+    transform: translateY(12px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 768px) {
   .settings-overlay__content {
     width: 95%;
     max-width: none;
-  }
-
-  .settings-overlay__title {
-    font-size: 1.5rem;
-  }
-
-  .settings-overlay__menu-item {
-    font-size: 1rem;
-    padding: 0.875rem 1rem;
-  }
-
-  .settings-overlay__menu-icon {
-    font-size: 1.25rem;
-    width: 28px;
   }
 }

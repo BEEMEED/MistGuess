@@ -5,6 +5,8 @@ from models.user import User
 from models.clans import Clans
 from sqlalchemy.exc import IntegrityError
 import logging
+from datetime import datetime
+from models import Ban
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,7 @@ class UserRepository:
 
     @staticmethod
     async def get_by_id(db: AsyncSession, id: int):
-        result = await db.execute(select(User).filter(User.id == id))
+        result = await db.execute(select(User).filter(User.id == id).options(selectinload(User.ban)))
         return result.scalar_one_or_none()
 
     @staticmethod
@@ -74,7 +76,7 @@ class UserRepository:
 
     @staticmethod
     async def get_paginated(db: AsyncSession, offset: int, limit: int):
-        result = await db.execute(select(User).offset(offset).limit(limit))
+        result = await db.execute(select(User).offset(offset).limit(limit).options(selectinload(User.ban)))
         return result.scalars().all()
 
     @staticmethod
@@ -105,3 +107,26 @@ class UserRepository:
     async def get_by_telegram(db: AsyncSession, telegram_id: str):
         result = await db.execute(select(User).where(User.telegram == telegram_id))
         return result.scalar_one_or_none()
+    
+    @staticmethod
+    async def ban_user(db: AsyncSession, user_id: int, reason: str, banned_until: datetime | None = None):
+        user = await UserRepository.get_by_id(db, user_id)
+        if not user:
+            return None
+        
+        ban = Ban(user_id=user_id, reason=reason, banned_until=banned_until)
+        db.add(ban)
+        await db.commit()
+        await db.refresh(ban)
+        return ban
+    
+    @staticmethod
+    async def unban_user(db: AsyncSession, user_id: int):
+        result = await db.execute(select(Ban).where(Ban.user_id == user_id))
+        ban = result.scalar_one_or_none()
+        if not ban:
+            return None
+        
+        await db.delete(ban)
+        await db.commit()
+        return ban

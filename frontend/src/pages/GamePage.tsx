@@ -35,6 +35,11 @@ export const GamePage: React.FC = () => {
   const [opponentPov, setOpponentPov] = useState<{ heading: number; pitch: number; zoom: number } | null>(null);
   const [opponentPosition, setOpponentPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [opponentGuessPreview, setOpponentGuessPreview] = useState<{ lat: number; lng: number } | null>(null);
+  const [tabAwayCountdown, setTabAwayCountdown] = useState<number | null>(null);
+  const [tabAwayPlayer, setTabAwayPlayer] = useState<number | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportSent, setReportSent] = useState(false);
   const endRoundRef = React.useRef(endRound);
   const lastCameraUpdateRef = useRef<number>(0);
   const panoramaPositionRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -57,6 +62,59 @@ export const GamePage: React.FC = () => {
   useEffect(() => {
     endRoundRef.current = endRound;
   }, [endRound]);
+
+  // Reset per-round state whenever a new round starts (index increments)
+  useEffect(() => {
+    setHasGuessed(false);
+    setGuessLocation(null);
+    setMapKey(k => k + 1);
+    setRoundEndTriggered(false);
+  }, [gameState?.currentLocationIndex]);
+
+  // Tab visibility detection — send to backend when player leaves/returns
+  useEffect(() => {
+    if (!gameState?.isGameStarted || gameState?.isGameEnded) return;
+
+    const handleVisibilityChange = () => {
+      const visible = document.visibilityState === 'visible';
+      wsService.sendTabVisibility(visible);
+    };
+
+    const handleBlur = () => wsService.sendTabVisibility(false);
+    const handleFocus = () => wsService.sendTabVisibility(true);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [gameState?.isGameStarted, gameState?.isGameEnded]);
+
+  // Listen for tab_away and kick WS events
+  useEffect(() => {
+    const handleTabAwayEvent = (event: any) => {
+      if (event.type === 'tab_away_countdown') {
+        setTabAwayCountdown(event.remaining);
+        setTabAwayPlayer(event.player);
+      } else if (event.type === 'tab_away_cancelled') {
+        setTabAwayCountdown(null);
+        setTabAwayPlayer(null);
+      } else if (event.type === 'tab_away_kicked') {
+        setTabAwayCountdown(null);
+        setTabAwayPlayer(null);
+      } else if (event.type === 'kicked') {
+        // This player was kicked — disconnect and go home
+        wsService.disconnect();
+        navigate('/');
+      }
+    };
+
+    return wsService.onEvent(handleTabAwayEvent);
+  }, [navigate]);
 
   // Broadcast guess marker position to spectators in real-time
   useEffect(() => {
@@ -222,6 +280,14 @@ export const GamePage: React.FC = () => {
     // Backend automatically starts next round, no need to call startNextRound here
   };
 
+  const handleSubmitReport = () => {
+    if (!opponent || !code || !reportReason.trim()) return;
+    wsService.sendReport(opponent.user_id, code, reportReason.trim());
+    setReportSent(true);
+    setShowReportModal(false);
+    setReportReason('');
+  };
+
   if (!gameState || !user) {
     return (
       <div className="game-page full-screen flex-center">
@@ -261,6 +327,26 @@ export const GamePage: React.FC = () => {
             opacity: Math.max(0, 1 - (timeRemaining / 30)),
           }}
         />
+      )}
+
+      {/* Tab away overlay — darkened screen with countdown */}
+      {tabAwayCountdown !== null && tabAwayPlayer === user?.user_id && (
+        <div className="tab-away-overlay">
+          <div className="tab-away-content">
+            <div className="tab-away-warning">RETURN TO GAME</div>
+            <div className={`tab-away-timer ${tabAwayCountdown <= 3 ? 'tab-away-critical' : ''}`}>
+              {tabAwayCountdown}
+            </div>
+            <div className="tab-away-hint">You will be kicked for leaving the page</div>
+          </div>
+        </div>
+      )}
+
+      {/* Opponent tab away indicator */}
+      {tabAwayCountdown !== null && tabAwayPlayer !== null && tabAwayPlayer !== user?.user_id && (
+        <div className="opponent-tab-away-toast">
+          Opponent left the tab — kick in {tabAwayCountdown}s
+        </div>
       )}
 
       {/* Toast notifications */}
@@ -311,6 +397,17 @@ export const GamePage: React.FC = () => {
                     <div className="hp-panel-value">{Math.max(0, playerHp)}</div>
                   </div>
                 </div>
+                {!isCurrentUser && (
+                  <div className="report-btn-row">
+                    {!reportSent ? (
+                      <button className="report-flag-btn" onClick={() => setShowReportModal(true)}>
+                        ⚑ Report
+                      </button>
+                    ) : (
+                      <span className="report-sent-badge">✓ Reported</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -438,6 +535,47 @@ export const GamePage: React.FC = () => {
         onSendMessage={sendMessage}
         currentUser={user.user_id.toString()}
       />
+
+      {/* Report modal */}
+      {showReportModal && opponent && (
+        <div className="report-modal-backdrop" onClick={() => setShowReportModal(false)}>
+          <div className="report-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="report-modal__header">
+              <span className="report-modal__title">REPORT PLAYER</span>
+              <button className="report-modal__close" onClick={() => setShowReportModal(false)}>✕</button>
+            </div>
+            <div className="report-modal__body">
+              <p className="report-modal__suspect">
+                Reporting: <strong>{opponent.name}</strong>
+              </p>
+              <p className="report-modal__hint">
+                A demo of the entire game will be attached automatically.
+              </p>
+              <textarea
+                className="report-modal__reason"
+                placeholder="Describe the suspicious behavior..."
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                maxLength={500}
+                rows={4}
+                autoFocus
+              />
+              <div className="report-modal__chars">{reportReason.length}/500</div>
+            </div>
+            <div className="report-modal__footer">
+              <button
+                className="report-modal__cancel"
+                onClick={() => setShowReportModal(false)}
+              >Cancel</button>
+              <button
+                className="report-modal__submit"
+                onClick={handleSubmitReport}
+                disabled={!reportReason.trim()}
+              >Submit Report</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
