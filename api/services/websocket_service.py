@@ -94,7 +94,7 @@ class Websocket_service:
             "user_id": user.id,
             "name": user.name,
             "avatar": user.avatar,
-            "xp": user.xp,
+            "mmr": user.mmr,
             "rank": user.rank,
             "clan_tag": clan_tag,
         }
@@ -531,10 +531,10 @@ class Websocket_service:
             if not user:
                 continue
 
-            cur_xp = user.xp
+            cur_mmr = user.mmr
             new_rank = "Ashborn"
-            for xp_threshold, rank in reversed(config.RANKS):
-                if cur_xp >= xp_threshold:
+            for mmr_threshold, rank in reversed(config.RANKS):
+                if cur_mmr >= mmr_threshold:
                     new_rank = rank
                     break
             if user.rank != new_rank:
@@ -597,12 +597,23 @@ class Websocket_service:
             user_id: users[user_id].rank for user_id in player_ids if user_id in users
         }
 
-        for user_id in player_ids:
-            if user_id in users:
-                users[user_id].xp += 10
+        if winner_id and len(player_ids) == 2:
+            loser_id = [pid for pid in player_ids if pid != winner_id][0]
 
-        if winner_id and winner_id in users:
-            users[winner_id].xp += 50
+            if winner_id in users and loser_id in users:
+                winner = users[winner_id]
+                loser = users[loser_id]
+
+                exp_winner = 1 / (1 + 10 ** ((loser.mmr - winner.mmr) / 400))
+                exp_loser = 1 - exp_winner
+
+                k_winner = 40 if winner.games_played < 30 else 20
+                k_loser = 40 if loser.games_played < 30 else 20
+
+                winner.mmr += round(k_winner * (1 - exp_winner))
+                loser.mmr += round(k_loser * (0 - exp_loser))
+
+                loser.mmr = max(loser.mmr, 0)
 
         await db.commit()
 

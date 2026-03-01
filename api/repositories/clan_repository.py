@@ -275,13 +275,13 @@ class ClanRepository:
         all_ids = clan_1_ids + clan_2_ids
         users_result = await db.execute(select(User).filter(User.id.in_(all_ids)))
 
-        user_xp_map = {user.id: user.xp for user in users_result.scalars().all()}
+        user_mmr_map = {user.id: user.mmr for user in users_result.scalars().all()}
 
         clan_1_sorted = sorted(
-            clan_1_ids, key=lambda uid: user_xp_map.get(uid, 0), reverse=True
+            clan_1_ids, key=lambda uid: user_mmr_map.get(uid, 0), reverse=True
         )
         clan_2_sorted = sorted(
-            clan_2_ids, key=lambda uid: user_xp_map.get(uid, 0), reverse=True
+            clan_2_ids, key=lambda uid: user_mmr_map.get(uid, 0), reverse=True
         )
 
         pairs = [

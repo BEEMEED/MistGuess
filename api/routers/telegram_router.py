@@ -23,7 +23,7 @@ async def get_telegram_stats(
         "username": user.username,
         "avatar": user.avatar,
         "rank": user.rank,
-        "xp": user.xp,
+        "mmr": user.mmr,
         "games_played": user.games_played,
         "games_won": user.games_won,
         "games_lost": user.games_lost,

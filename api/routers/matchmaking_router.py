@@ -34,7 +34,7 @@ async def matchmaking_route(websocket: WebSocket):
             if user is None:
                 await websocket.close(code=1008, reason="User not found")
                 return
-            xp = user.xp  
+            mmr = user.mmr  
     
     except HTTPException:
         await websocket.close(code=1008, reason="Invalid token")
@@ -42,13 +42,13 @@ async def matchmaking_route(websocket: WebSocket):
     logger.info(f"User {user_id} connected to matchmaking")
     
     try:
-        await matchmaking_instance.join_queue(user_id, websocket, xp)
+        await matchmaking_instance.join_queue(user_id, websocket, mmr)
         
         while True:
             message = await websocket.receive_json()
             
             if message["type"] == "stop_matchmaking":
-                await matchmaking_instance.leave_queue(user_id, websocket, xp)
+                await matchmaking_instance.leave_queue(user_id, websocket, mmr)
                 break
     
     except WebSocketDisconnect:
@@ -60,7 +60,7 @@ async def matchmaking_route(websocket: WebSocket):
     finally:
 
         try:
-            await matchmaking_instance.leave_queue(user_id, websocket, xp)
+            await matchmaking_instance.leave_queue(user_id, websocket, mmr)
             logger.info(f"User {user_id} removed from queue")
         
         except Exception as e:

@@ -51,7 +51,7 @@ class Admin_Panel:
         )
         return {
             "data_user": [
-                {"id": u.id, "username": u.username, "name": u.name, "xp": u.xp, "rank": u.rank, "role": u.role, "telegram": u.telegram, "banned_until": u.ban.banned_until.isoformat() if (u.ban and u.ban.banned_until) else None}
+                {"id": u.id, "username": u.username, "name": u.name, "mmr": u.mmr, "rank": u.rank, "role": u.role, "telegram": u.telegram, "banned_until": u.ban.banned_until.isoformat() if (u.ban and u.ban.banned_until) else None}
                 for u in users
             ],
             "total_users": total_users,

@@ -26,14 +26,14 @@ class Config:
 
     RANKS = [
         (0, "Ashborn"),
-        (100, "Fog Runner"),
-        (300, "Tin Sight"),
-        (600, "Brass Deceiver"),
-        (1000, "Steel Pusher"),
-        (1600, "Iron Puller"),
-        (2500, "Atium Shadow"),
-        (4000, "Mistborn"),
-        (6500, "Lord Mistborn"),
+        (900, "Fog Runner"),
+        (1100, "Tin Sight"),
+        (1300, "Brass Deceiver"),
+        (1500, "Steel Pusher"),
+        (1700, "Iron Puller"),
+        (2000, "Atium Shadow"),
+        (2300, "Mistborn"),
+        (2600, "Lord Mistborn"),
     ]
 
     CLAN_RANKS = [

@@ -63,7 +63,7 @@ class Profile:
         message = {
             "name": user.name,
             "avatar": user.avatar,
-            "xp": user.xp,
+            "mmr": user.mmr,
             "rank": user.rank,
             "role": user.role,
             "country_stats": user.country_stats or {},

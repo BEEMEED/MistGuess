@@ -13,8 +13,8 @@ Dependies = Dependies()
 async def create_clan(request: ClanRequest,current_user: User = Depends(Dependies.get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.clan_id != 0:
         raise HTTPException(status_code=400, detail="You are already in a clan")
-    if current_user.xp < 500:
-        raise HTTPException(status_code=400, detail="Not enough xp")
+    if current_user.mmr < 1300:
+        raise HTTPException(status_code=400, detail="Not enough mmr")
     return await ClanRepository.create(request.name, current_user.id, [current_user.id],db, request.tag, request.description)
 
 @router.get("/all")

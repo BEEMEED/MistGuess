@@ -86,7 +86,7 @@ class UserRepository:
 
     @staticmethod
     async def get_leaderboard(db: AsyncSession):
-        result = await db.execute(select(User).order_by(User.xp.desc()).limit(10))
+        result = await db.execute(select(User).order_by(User.mmr.desc()).limit(10))
         users = result.scalars().all()
 
         leaderboard = []
@@ -96,7 +96,7 @@ class UserRepository:
                 "id": user.id,
                 "username": user.username,
                 "name": user.name,
-                "xp": user.xp,
+                "mmr": user.mmr,
                 "rank": user.rank,
                 "avatar": user.avatar,
                 "clan_tag": clan_tag,

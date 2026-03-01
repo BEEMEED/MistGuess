@@ -8,6 +8,7 @@ from repositories.user_repository import UserRepository
 from models.user import User
 from repositories.lobby_repository import LobbyRepository
 from repositories.location_repository import LocationRepository
+import time
 
 
 logger = logging.getLogger(__name__)
@@ -17,9 +18,9 @@ class MatchmakingService:
     def __init__(self) -> None:
         self.queue = []
 
-    async def join_queue(self, user_id, ws, xp):
-        self.queue = [(l, w, x) for l, w, x in self.queue if l != user_id]
-        self.queue.append((user_id, ws, xp))
+    async def join_queue(self, user_id, ws, mmr):
+        self.queue = [(l, w, m, t) for l, w, m, t in self.queue if l != user_id]
+        self.queue.append((user_id, ws, mmr, time.time()))
         await ws.send_json({"type": "queue_joined", "position": len(self.queue)})
         logger.info(
             f"User {user_id} joined matchmaking queue, position: {len(self.queue)}"
@@ -32,15 +33,25 @@ class MatchmakingService:
             if len(self.queue) >= 2:
                 match_found = False
 
-                for i, (login_1, ws_1, xp_1) in enumerate(self.queue):
+                now = time.time()
+                for i, (login_1, ws_1, mmr_1, joined_1) in enumerate(self.queue):
                     if match_found:
                         break
-                    for login_2, ws_2, xp_2 in self.queue[i + 1 :]:
+                    for login_2, ws_2, mmr_2, joined_2 in self.queue[i + 1 :]:
+                        wait = max(now - joined_1, now - joined_2)
+                        threshold = 100 + wait * 5
 
-                        if abs(xp_1 - xp_2) <= 200:
+                        if abs(mmr_1 - mmr_2) <= threshold:
                             logger.info(
-                                f"Match found for {login_1} (xp: {xp_1}) and {login_2} (xp: {xp_2})"
+                                f"Match found for {login_1} (mmr: {mmr_1}) and {login_2} (mmr: {mmr_2}, threshold: {threshold:.0f})"
                             )
+
+                            self.queue = [
+                                (l, w, m, t)
+                                for l, w, m, t in self.queue
+                                if l not in (login_1, login_2)
+                            ]
+                            match_found = True
 
                             try:
                                 from database.database import asyncsession
@@ -60,56 +71,63 @@ class MatchmakingService:
                                     assert user1
                                     assert user2
 
-                                    asyncio.create_task(self.match_found(ws_1, ws_2, user1, user2, invite_code))
+                                    asyncio.create_task(
+                                        self.notify_match(
+                                            ws_1, ws_2, user1, user2, invite_code
+                                        )
+                                    )
                             except Exception as e:
                                 logger.error(f"Error: {str(e)}")
+                            break
 
-    async def leave_queue(self, login, ws, xp):
-        self.queue = [(l, w, x) for l, w, x in self.queue if l != login]
+    async def leave_queue(self, login, ws, mmr):
+        self.queue = [(l, w, m, t) for l, w, m, t in self.queue if l != login]
         logger.info(
             f"User {login} left matchmaking queue. matchmaking queue size: {len(self.queue)}"
         )
 
-    async def match_found(self,ws_1: WebSocket, ws_2: WebSocket, user1: User, user2: User, invite_code: str):
+    async def notify_match(
+        self,
+        ws_1: WebSocket,
+        ws_2: WebSocket,
+        user1: User,
+        user2: User,
+        invite_code: str,
+    ):
         opponent1_info = {
             "user_id": user1.id,
             "name": user1.name,
-            "xp": user1.xp,
+            "mmr": user1.mmr,
             "rank": user1.rank,
             "avatar": user1.avatar,
-            }
+        }
         oppenent2_info = {
             "user_id": user2.id,
             "name": user2.name,
-            "xp": user2.xp,
+            "mmr": user2.mmr,
             "rank": user2.rank,
             "avatar": user2.avatar,
-            }
-
-        await ws_1.send_json({
-            "type": "match_found",
-                        "LobbyCode": invite_code,
-                        "opponent": oppenent2_info,
-                        })
-        await ws_2.send_json({
-            "type": "match_found",
-            "LobbyCode": invite_code,
-            "opponent": opponent1_info,
-        })
-        await asyncio.sleep(2)
+        }
 
         await ws_1.send_json(
-            {"type": "redirect", "LobbyCode": invite_code}
+            {
+                "type": "match_found",
+                "LobbyCode": invite_code,
+                "opponent": oppenent2_info,
+            }
         )
-
         await ws_2.send_json(
-            {"type": "redirect", "LobbyCode": invite_code}
+            {
+                "type": "match_found",
+                "LobbyCode": invite_code,
+                "opponent": opponent1_info,
+            }
         )
+        await asyncio.sleep(2)
 
-        self.queue.remove((user1.id, ws_1, user1.xp))
-        self.queue.remove((user2.id, ws_2, user2.xp))
-        match_found = True
+        await ws_1.send_json({"type": "redirect", "LobbyCode": invite_code})
 
+        await ws_2.send_json({"type": "redirect", "LobbyCode": invite_code})
 
 
 matchmaking_instance = MatchmakingService()
