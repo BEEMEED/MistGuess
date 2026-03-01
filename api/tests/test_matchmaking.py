@@ -31,11 +31,11 @@ async def test_matchmaking_creates_match(regular_user, db_session):
     lobby = await LobbyRepository.create(db=db_session, host_id=regular_user["user"].id)
 
     service.queue = [
-        (regular_user["user"].id, ws1, regular_user["user"].xp),
-        (user2.id, ws2, user2.xp),
+        (regular_user["user"].id, ws1, regular_user["user"].mmr),
+        (user2.id, ws2, user2.mmr),
     ]
 
-    await service.match_found(ws1, ws2, regular_user["user"], user2, lobby.invite_code)
+    await service.notify_match(ws1, ws2, regular_user["user"], user2, lobby.invite_code)
 
     calls1 = [c.args[0] for c in ws1.send_json.call_args_list]
     assert any(c["type"] == "match_found" for c in calls1)

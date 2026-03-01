@@ -31,54 +31,48 @@ class MatchmakingService:
             await asyncio.sleep(3)
 
             if len(self.queue) >= 2:
-                match_found = False
-
                 now = time.time()
-                for i, (login_1, ws_1, mmr_1, joined_1) in enumerate(self.queue):
-                    if match_found:
+                queue = sorted(self.queue, key=lambda x: x[2])
+
+                for i in range(len(queue) - 1):
+                    login_1, ws_1, mmr_1, joined_1 = queue[i]
+                    login_2, ws_2, mmr_2, joined_2 = queue[i + 1]
+
+                    wait = max(now - joined_1, now - joined_2)
+                    threshold = 100 + wait * 5
+
+                    if abs(mmr_1 - mmr_2) <= threshold:
+                        logger.info(
+                            f"Match found for {login_1} (mmr: {mmr_1}) and {login_2} (mmr: {mmr_2}, threshold: {threshold:.0f})"
+                        )
+
+                        self.queue = [
+                            (l, w, m, t)
+                            for l, w, m, t in self.queue
+                            if l not in (login_1, login_2)
+                        ]
+                        try:
+                            from database.database import asyncsession
+
+                            async with asyncsession() as db:
+                                lobby = await LobbyRepository.create(
+                                    db=db, host_id=login_1, user_2=login_2
+                                )
+
+                                invite_code = lobby.invite_code
+
+                                users = await UserRepository.get_by_ids(db, [login_1, login_2])
+                                assert users
+                                user1, user2 = users[0], users[1]
+
+                                asyncio.create_task(
+                                    self.notify_match(
+                                        ws_1, ws_2, user1, user2, invite_code
+                                    )
+                                )
+                        except Exception as e:
+                            logger.error(f"Error: {str(e)}")
                         break
-                    for login_2, ws_2, mmr_2, joined_2 in self.queue[i + 1 :]:
-                        wait = max(now - joined_1, now - joined_2)
-                        threshold = 100 + wait * 5
-
-                        if abs(mmr_1 - mmr_2) <= threshold:
-                            logger.info(
-                                f"Match found for {login_1} (mmr: {mmr_1}) and {login_2} (mmr: {mmr_2}, threshold: {threshold:.0f})"
-                            )
-
-                            self.queue = [
-                                (l, w, m, t)
-                                for l, w, m, t in self.queue
-                                if l not in (login_1, login_2)
-                            ]
-                            match_found = True
-
-                            try:
-                                from database.database import asyncsession
-
-                                async with asyncsession() as db:
-                                    lobby = await LobbyRepository.create(
-                                        db=db, host_id=login_1
-                                    )
-                                    invite_code = lobby.invite_code
-
-                                    await LobbyRepository.add_user(
-                                        db, invite_code, login_2
-                                    )
-
-                                    user1 = await UserRepository.get_by_id(db, login_1)
-                                    user2 = await UserRepository.get_by_id(db, login_2)
-                                    assert user1
-                                    assert user2
-
-                                    asyncio.create_task(
-                                        self.notify_match(
-                                            ws_1, ws_2, user1, user2, invite_code
-                                        )
-                                    )
-                            except Exception as e:
-                                logger.error(f"Error: {str(e)}")
-                            break
 
     async def leave_queue(self, login, ws, mmr):
         self.queue = [(l, w, m, t) for l, w, m, t in self.queue if l != login]

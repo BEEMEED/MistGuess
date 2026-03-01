@@ -28,9 +28,14 @@ class UserRepository:
         return user
 
     @staticmethod
-    async def get_by_id(db: AsyncSession, id: int):
-        result = await db.execute(select(User).filter(User.id == id).options(selectinload(User.ban)))
+    async def get_by_id(db: AsyncSession, user_id: int):
+        result = await db.execute(select(User).filter(User.id == user_id).options(selectinload(User.ban)))
         return result.scalar_one_or_none()
+    
+    @staticmethod
+    async def get_by_ids(db: AsyncSession, user_ids: list[int]):
+        result = await db.execute(select(User).filter(User.id.in_(user_ids)).options(selectinload(User.ban)))
+        return result.scalars().all()
 
     @staticmethod
     async def get_clan_tag(db: AsyncSession, user: User) -> str | None:

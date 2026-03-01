@@ -71,7 +71,7 @@ class Profile:
             "clan_role": user.clan_role,
             "clan_tag": clan_tag,
         }
-        lobbies = await LobbyRepository.get_by_user_id(db, user_id)
+        lobbies = await LobbyRepository.get_by_user_id(db, [user_id])
         message["lobbies"] = [{"code": lobby.invite_code, "host_id": lobby.host_id} for lobby in lobbies]
         return message
     @staticmethod

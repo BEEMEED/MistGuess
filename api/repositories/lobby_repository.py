@@ -8,12 +8,12 @@ TIMER = 240
 class LobbyRepository:
     
     @staticmethod
-    async def create(db: AsyncSession,host_id:int, mode: str | None = None, war_id: int | None = None):
+    async def create(db: AsyncSession,host_id:int, mode: str | None = None, war_id: int | None = None, user_2 : int | None = None):
         InviteCode = secrets.token_urlsafe(6)
         locations_objs = await LocationRepository.get_random_location(db, 13)
         locations = [{"lat": loc.lat, "lon": loc.lon, "region": loc.region, "url": f"https://www.google.com/maps/@{loc.lat},{loc.lon},17z","country": loc.country} for loc in locations_objs]
         if mode:
-            lobby = Lobby(invite_code=InviteCode, host_id=host_id, locations=locations,timer=TIMER,mode=mode,war_id=war_id,users=[host_id])
+            lobby = Lobby(invite_code=InviteCode, host_id=host_id, locations=locations,timer=TIMER,mode=mode,war_id=war_id,users=[host_id, user_2])
         else:
             lobby = Lobby(invite_code=InviteCode, host_id=host_id, locations=locations,timer=TIMER,users=[host_id])
 
@@ -86,8 +86,8 @@ class LobbyRepository:
         return result.scalar_one()
     
     @staticmethod
-    async def get_by_user_id(db: AsyncSession, user_id: int):
+    async def get_by_user_id(db: AsyncSession, users_id: list[int]):
         result = await db.execute(
-            select(Lobby).where(Lobby.users.overlap([user_id]))
+            select(Lobby).where(Lobby.users.overlap([users_id]))
         )
         return result.scalars().all()
